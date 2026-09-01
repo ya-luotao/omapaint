@@ -47,7 +47,16 @@ int main(int argc, char *argv[])
     Theme theme;
 
     QCommandLineParser parser;
-    parser.setApplicationDescription(QStringLiteral("Paint. For Omarchy."));
+    parser.setApplicationDescription(QStringLiteral(
+        "Paint. For Omarchy.\n"
+        "\n"
+        "Examples:\n"
+        "  omapaint image.png            edit an image (PNG, JPEG, WebP)\n"
+        "  omapaint --new 1280x720       blank canvas of a given size\n"
+        "  omapaint --clipboard          edit the image on the clipboard\n"
+        "  wl-paste | omapaint -         same, via stdin\n"
+        "  omapaint --annotate shot.png  annotate; Ctrl+Enter (Done) saves in\n"
+        "                                place and exits 0, discard exits 1"));
     parser.addHelpOption();
     parser.addVersionOption();
     parser.addPositionalArgument(QStringLiteral("file"),

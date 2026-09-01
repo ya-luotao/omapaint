@@ -73,6 +73,8 @@ install(FILES packaging/omapaint.desktop
         DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
 install(FILES assets/omapaint.png
         DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/256x256/apps)
+install(FILES packaging/skills/omapaint/SKILL.md
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/omapaint/agents/skills/omapaint)
 
 enable_testing()
 add_subdirectory(tests)

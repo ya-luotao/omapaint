@@ -66,6 +66,21 @@ o.bind("SUPER + ALT + P", "Paint clipboard image", "omapaint --clipboard")
 canvas plus a notice when there is none); `wl-paste | omapaint -` does the
 same via stdin.
 
+## Agents
+
+OmaPaint ships an agent skill — the CLI contract, the annotate-mode exit
+codes, and scripting recipes, in the format Claude Code, Codex, and friends
+discover (Omarchy provisions its own skills the same way):
+
+```bash
+omapaint-edit --install-skill    # undo with: omapaint-edit --uninstall-skill
+```
+
+This symlinks `/usr/share/omapaint/agents/skills/omapaint` into
+`~/.claude/skills`, `~/.agents/skills`, `~/.codex/skills`, and
+`~/.pi/agent/skills`. `omapaint --help` carries the same contract for
+anything that only reads help text.
+
 ## Building
 
 Requires Qt 6.5+ (`qt6-base`, `qt6-declarative`), CMake, and a C++ compiler.

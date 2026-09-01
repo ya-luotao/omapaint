@@ -13,7 +13,42 @@ set -euo pipefail
 # (Omarchy's own defaults live in /usr/share/uwsm/env.d/10-omarchy).
 ENV_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/uwsm/env.d/20-omapaint"
 
+# Agent skill, symlinked into the same per-agent dirs Omarchy's own
+# provisioning uses (omarchy-provision-user).
+SKILL_SRC="/usr/share/omapaint/agents/skills/omapaint"
+SKILL_DIRS=("$HOME/.agents/skills" "$HOME/.claude/skills"
+  "$HOME/.codex/skills" "$HOME/.pi/agent/skills")
+
 case "${1:-}" in
+--install-skill)
+  if [[ ! -f "$SKILL_SRC/SKILL.md" ]]; then
+    echo "omapaint-edit: $SKILL_SRC not found — install the omapaint package first." >&2
+    exit 1
+  fi
+  for dir in "${SKILL_DIRS[@]}"; do
+    mkdir -p "$dir"
+    # ln -sfn on an existing real directory would create the link *inside*
+    # it; never touch an entry that is not a symlink.
+    if [[ -e "$dir/omapaint" && ! -L "$dir/omapaint" ]]; then
+      echo "skipping $dir/omapaint: already exists and is not a symlink" >&2
+      continue
+    fi
+    ln -sfn "$SKILL_SRC" "$dir/omapaint"
+    echo "  $dir/omapaint"
+  done
+  echo "Linked the OmaPaint agent skill (paths above)."
+  exit 0
+  ;;
+--uninstall-skill)
+  for dir in "${SKILL_DIRS[@]}"; do
+    # Only remove a symlink that is ours, never a user's own entry.
+    if [[ -L "$dir/omapaint" && $(readlink "$dir/omapaint") == "$SKILL_SRC" ]]; then
+      rm "$dir/omapaint"
+      echo "Removed $dir/omapaint"
+    fi
+  done
+  exit 0
+  ;;
 --install)
   mkdir -p "$(dirname "$ENV_FILE")"
   printf '%s\n' \
@@ -23,6 +58,7 @@ case "${1:-}" in
   echo "  wrote $ENV_FILE"
   echo "Takes effect at your next login. To use it right now, per shot:"
   echo "  omarchy screenshot --editor=omapaint-edit"
+  echo "Tip: 'omapaint-edit --install-skill' teaches your coding agents OmaPaint."
   exit 0
   ;;
 --uninstall)
@@ -32,9 +68,11 @@ case "${1:-}" in
   exit 0
   ;;
 "" | -h | --help)
-  echo "usage: omapaint-edit <image>      annotate an image, save in place, copy to clipboard"
-  echo "       omapaint-edit --install    make OmaPaint the Omarchy screenshot editor"
-  echo "       omapaint-edit --uninstall  restore the Omarchy default"
+  echo "usage: omapaint-edit <image>            annotate an image, save in place, copy to clipboard"
+  echo "       omapaint-edit --install          make OmaPaint the Omarchy screenshot editor"
+  echo "       omapaint-edit --uninstall        restore the Omarchy default"
+  echo "       omapaint-edit --install-skill    link the OmaPaint agent skill (~/.claude/skills etc.)"
+  echo "       omapaint-edit --uninstall-skill  remove those links"
   exit 2
   ;;
 esac
