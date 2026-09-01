@@ -12,10 +12,12 @@ Just a fast, obvious utility that shares Omarchy's theme and technology stack
 
 ## Status
 
-**v0.0.1 — Paint Something.** The basic editor works: draw with pencil and
-eraser, pick a foreground color, open and save PNG files, undo/redo, with
-unsaved-changes protection. See [PLAN.md](PLAN.md) for the goals,
-architecture, and milestone roadmap.
+**v0.0.2 — Basic Paint.** A usable small paint program: pencil, brush,
+eraser, line, rectangle, ellipse, flood fill, and eyedropper; brush size;
+a classic quick-access color palette; zoom from 25% to 1600% with an optional
+pixel grid; undo/redo across every tool; PNG open/save with unsaved-changes
+protection. See [PLAN.md](PLAN.md) for the goals, architecture, and milestone
+roadmap.
 
 ## Building
 

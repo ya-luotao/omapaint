@@ -22,10 +22,11 @@ static void commitStroke(Document &doc, const QPointF &from, const QPointF &to,
                          const QColor &color)
 {
     PencilTool pencil;
+    const ToolContext ctx{color, 1};
     const QImage before = doc.image();
-    QRect damage = pencil.begin(doc.image(), from, color);
-    damage |= pencil.move(doc.image(), to, color);
-    pencil.end();
+    QRect damage = pencil.begin(doc.image(), from, ctx);
+    damage |= pencil.move(doc.image(), to, ctx);
+    pencil.end(doc.image(), to, ctx);
     doc.undoStack()->push(new DrawCommand(&doc, damage, before.copy(damage),
                                           doc.image().copy(damage), "Pencil"));
 }

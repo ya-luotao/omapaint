@@ -13,7 +13,6 @@ ToolBar {
     signal openRequested()
     signal saveRequested()
     signal saveAsRequested()
-    signal colorRequested()
 
     RowLayout {
         anchors.fill: parent
@@ -51,33 +50,34 @@ ToolBar {
 
         ToolSeparator {}
 
-        ToolButton {
-            text: qsTr("Pencil")
-            checkable: true
-            checked: root.canvas.tool === CanvasItem.Pencil
-            onClicked: root.canvas.tool = CanvasItem.Pencil
-        }
-        ToolButton {
-            text: qsTr("Eraser")
-            checkable: true
-            checked: root.canvas.tool === CanvasItem.Eraser
-            onClicked: root.canvas.tool = CanvasItem.Eraser
+        Label { text: qsTr("Size") }
+        SpinBox {
+            from: 1
+            to: 64
+            value: root.canvas.brushSize
+            onValueModified: root.canvas.brushSize = value
         }
 
         ToolSeparator {}
 
-        // Foreground color swatch.
-        AbstractButton {
-            implicitWidth: 28
-            implicitHeight: 28
-            onClicked: root.colorRequested()
-
-            contentItem: Rectangle {
-                color: root.canvas.foregroundColor
-                border.color: root.palette.mid
-                border.width: 1
-                radius: 3
-            }
+        ToolButton {
+            text: "−"
+            onClicked: root.canvas.zoomOut()
+        }
+        Label {
+            text: Math.round(root.canvas.zoom * 100) + "%"
+            horizontalAlignment: Text.AlignHCenter
+            Layout.preferredWidth: 48
+        }
+        ToolButton {
+            text: "+"
+            onClicked: root.canvas.zoomIn()
+        }
+        ToolButton {
+            text: qsTr("Grid")
+            checkable: true
+            checked: root.canvas.pixelGrid
+            onClicked: root.canvas.pixelGrid = checked
         }
 
         Item { Layout.fillWidth: true }

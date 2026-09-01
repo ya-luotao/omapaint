@@ -20,10 +20,11 @@ private slots:
 static void commitStroke(Document &doc, Tool &tool, const QPointF &from,
                          const QPointF &to, const QColor &color)
 {
+    const ToolContext ctx{color, 8};
     const QImage before = doc.image();
-    QRect damage = tool.begin(doc.image(), from, color);
-    damage |= tool.move(doc.image(), to, color);
-    tool.end();
+    QRect damage = tool.begin(doc.image(), from, ctx);
+    damage |= tool.move(doc.image(), to, ctx);
+    tool.end(doc.image(), to, ctx);
     doc.undoStack()->push(new DrawCommand(&doc, damage, before.copy(damage),
                                           doc.image().copy(damage), tool.name()));
 }

@@ -3,7 +3,9 @@ find_package(Qt6 REQUIRED COMPONENTS Test Gui Qml)
 set(OMAPAINT_CORE_SOURCES
     ${CMAKE_SOURCE_DIR}/src/document.cpp
     ${CMAKE_SOURCE_DIR}/src/image_io.cpp
+    ${CMAKE_SOURCE_DIR}/src/canvas_view.cpp
     ${CMAKE_SOURCE_DIR}/src/tools/tool.cpp
+    ${CMAKE_SOURCE_DIR}/src/tools/fill_tool.cpp
     ${CMAKE_SOURCE_DIR}/src/commands/draw_command.cpp
 )
 
@@ -19,3 +21,4 @@ omapaint_add_test(tst_document document/tst_document.cpp)
 omapaint_add_test(tst_image_io image_io/tst_image_io.cpp)
 omapaint_add_test(tst_tools tools/tst_tools.cpp)
 omapaint_add_test(tst_undo undo/tst_undo.cpp)
+omapaint_add_test(tst_canvas_view canvas_view/tst_canvas_view.cpp)
