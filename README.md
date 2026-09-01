@@ -2,10 +2,10 @@
 
 > Paint. For Omarchy.
 
-![OmaPaint editing the Omarchy logo](assets/readme-preview.png)
+![OmaPaint editing its own brand image](assets/readme-preview.png)
 
-*The Omarchy logo above was drawn by OmaPaint's own rectangle and fill tools,
-in the current Omarchy theme's colors — regenerate it with
+*The brand image above was drawn by OmaPaint's own brush, ellipse, and text
+tools, in the current Omarchy theme's colors — regenerate it with
 `./devtools/readme-preview.sh`.*
 
 OmaPaint is a small, native image editor for [Omarchy](https://omarchy.org).

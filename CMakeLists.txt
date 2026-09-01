@@ -80,7 +80,7 @@ add_subdirectory(tests)
 qt_add_executable(draw_logo
     devtools/draw_logo.cpp
     src/tools/tool.cpp
-    src/tools/fill_tool.cpp
+    src/text_renderer.cpp
 )
 target_include_directories(draw_logo PRIVATE src)
 target_link_libraries(draw_logo PRIVATE Qt6::Gui)
