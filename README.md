@@ -12,8 +12,23 @@ Just a fast, obvious utility that shares Omarchy's theme and technology stack
 
 ## Status
 
-**Planning.** Nothing to run yet — see [PLAN.md](PLAN.md) for the goals,
+**v0.0.1 — Paint Something.** The basic editor works: draw with pencil and
+eraser, pick a foreground color, open and save PNG files, undo/redo, with
+unsaved-changes protection. See [PLAN.md](PLAN.md) for the goals,
 architecture, and milestone roadmap.
+
+## Building
+
+Requires Qt 6.5+ (`qt6-base`, `qt6-declarative`), CMake, and a C++ compiler.
+
+```bash
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build build
+./build/omapaint              # blank canvas
+./build/omapaint image.png    # edit an image
+./build/omapaint --new 800x600
+ctest --test-dir build        # run the tests
+```
 
 ## Planned highlights
 
