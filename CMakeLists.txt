@@ -10,6 +10,8 @@ qt_add_executable(omapaint
     src/image_io.cpp src/image_io.h
     src/canvas_item.cpp src/canvas_item.h
     src/canvas_view.cpp src/canvas_view.h
+    src/selection_controller.cpp src/selection_controller.h
+    src/clipboard.cpp src/clipboard.h
     src/tools/tool.cpp src/tools/tool.h
     src/tools/pencil_tool.h
     src/tools/brush_tool.h
@@ -19,6 +21,7 @@ qt_add_executable(omapaint
     src/tools/ellipse_tool.h
     src/tools/fill_tool.cpp src/tools/fill_tool.h
     src/commands/draw_command.cpp src/commands/draw_command.h
+    src/commands/image_command.cpp src/commands/image_command.h
 )
 
 qt_add_qml_module(omapaint

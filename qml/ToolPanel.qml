@@ -17,6 +17,7 @@ Frame {
 
         Repeater {
             model: [
+                { label: qsTr("Select"),     tool: CanvasItem.Selection },
                 { label: qsTr("Pencil"),     tool: CanvasItem.Pencil },
                 { label: qsTr("Brush"),      tool: CanvasItem.Brush },
                 { label: qsTr("Eraser"),     tool: CanvasItem.Eraser },

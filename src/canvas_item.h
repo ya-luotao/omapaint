@@ -1,6 +1,8 @@
 #pragma once
 
+#include "clipboard.h"
 #include "document.h"
+#include "selection_controller.h"
 #include "tools/brush_tool.h"
 #include "tools/ellipse_tool.h"
 #include "tools/eraser_tool.h"
@@ -35,6 +37,10 @@ class CanvasItem : public QQuickPaintedItem
     Q_PROPERTY(bool pixelGrid READ pixelGrid WRITE setPixelGrid NOTIFY pixelGridChanged)
     Q_PROPERTY(QPointF hoverImagePos READ hoverImagePos NOTIFY hoverChanged)
     Q_PROPERTY(bool hoverValid READ hoverValid NOTIFY hoverChanged)
+    Q_PROPERTY(bool hasSelection READ hasSelection NOTIFY selectionChanged)
+    Q_PROPERTY(bool floating READ isFloating NOTIFY selectionChanged)
+    Q_PROPERTY(QRect selectionRect READ selectionRect NOTIFY selectionChanged)
+    Q_PROPERTY(bool canPaste READ canPaste NOTIFY canPasteChanged)
 
 public:
     enum ToolType {
@@ -46,6 +52,7 @@ public:
         Ellipse,
         Fill,
         Eyedropper,
+        Selection,
     };
     Q_ENUM(ToolType)
 
@@ -77,9 +84,28 @@ public:
     QPointF hoverImagePos() const { return m_hoverImagePos; }
     bool hoverValid() const { return m_hoverValid; }
 
+    bool hasSelection() const { return m_selection.hasSelection(); }
+    bool isFloating() const { return m_selection.isFloating(); }
+    QRect selectionRect() const { return m_selection.selectionRect(); }
+    bool canPaste() const { return m_clipboard.hasImage(); }
+
     Q_INVOKABLE void zoomIn();
     Q_INVOKABLE void zoomOut();
     Q_INVOKABLE void resetZoom();
+
+    // Selection and clipboard operations. undo/redo MUST be routed through
+    // these (not Document) so undo-while-floating cancels the float instead
+    // of unwinding history underneath it.
+    Q_INVOKABLE void undo();
+    Q_INVOKABLE void redo();
+    Q_INVOKABLE void cut();
+    Q_INVOKABLE void copy();
+    Q_INVOKABLE void paste();
+    Q_INVOKABLE void deleteSelection();
+    Q_INVOKABLE void selectAll();
+    Q_INVOKABLE void escape(); // cancel a float, else drop the marquee
+    Q_INVOKABLE void crop();
+    Q_INVOKABLE void commitSelection();
 
     void paint(QPainter *painter) override;
 
@@ -92,6 +118,8 @@ signals:
     void panChanged();
     void pixelGridChanged();
     void hoverChanged();
+    void selectionChanged();
+    void canPasteChanged();
     // Asks the enclosing Flickable to scroll to the given content offset
     // (emitted when zooming so the anchor point stays put).
     void panRequest(qreal x, qreal y);
@@ -115,6 +143,8 @@ private:
     void setHover(const QPointF &itemPos, bool valid);
     void finishStroke();
     void drawPixelGrid(QPainter *painter) const;
+    void drawSelectionOverlay(QPainter *painter) const;
+    void selectionUpdated();
 
     Document *m_document = nullptr;
     QList<QMetaObject::Connection> m_documentConnections;
@@ -136,6 +166,9 @@ private:
     RectangleTool m_rectangle;
     EllipseTool m_ellipse;
     FillTool m_fill;
+
+    SelectionController m_selection;
+    Clipboard m_clipboard;
 
     bool m_stroking = false;
     bool m_picking = false;

@@ -37,6 +37,7 @@ CanvasItem::CanvasItem(QQuickItem *parent)
 {
     setAcceptedMouseButtons(Qt::LeftButton);
     setAcceptHoverEvents(true);
+    connect(&m_clipboard, &Clipboard::changed, this, &CanvasItem::canPasteChanged);
 }
 
 void CanvasItem::setDocument(Document *document)
@@ -49,10 +50,14 @@ void CanvasItem::setDocument(Document *document)
     m_documentConnections.clear();
 
     m_document = document;
+    m_selection.setDocument(document);
+    emit selectionChanged();
 
     if (m_document) {
         m_documentConnections << connect(m_document, &Document::imageChanged, this, [this] {
             m_stroking = false;
+            m_selection.reset();
+            emit selectionChanged();
             update();
         });
         m_documentConnections << connect(
@@ -68,6 +73,11 @@ void CanvasItem::setTool(ToolType tool)
 {
     if (m_tool == tool)
         return;
+    // Leaving the selection tool commits any float and drops the marquee.
+    if (m_tool == Selection) {
+        m_selection.deselect();
+        selectionUpdated();
+    }
     m_tool = tool;
     emit toolChanged();
 }
@@ -154,10 +164,39 @@ void CanvasItem::paint(QPainter *painter)
     // Nearest neighbor when zoomed in (crisp pixels), smooth when zoomed out.
     painter->setRenderHint(QPainter::SmoothPixmapTransform, m_zoom < 1.0);
     painter->drawImage(0, 0, m_document->image());
+    if (m_selection.isFloating())
+        painter->drawImage(m_selection.floatingPos(), m_selection.floatingImage());
     painter->restore();
 
     if (m_pixelGrid && m_zoom >= kGridMinZoom)
         drawPixelGrid(painter);
+
+    drawSelectionOverlay(painter);
+}
+
+void CanvasItem::drawSelectionOverlay(QPainter *painter) const
+{
+    const QRect rect = m_selection.selectionRect();
+    if (rect.isEmpty() && m_selection.state() != SelectionController::State::Selecting)
+        return;
+    if (rect.isEmpty())
+        return;
+
+    const QRectF r = CanvasView::fromImage(QRectF(rect), snappedOrigin(), m_zoom);
+
+    // Static two-tone marching ants: solid white underneath, dashed black on
+    // top, visible on any background without an animation timer.
+    painter->setBrush(Qt::NoBrush);
+    QPen white(Qt::white);
+    white.setWidth(0); // cosmetic
+    painter->setPen(white);
+    painter->drawRect(r);
+
+    QPen black(Qt::black);
+    black.setWidth(0);
+    black.setStyle(Qt::DashLine);
+    painter->setPen(black);
+    painter->drawRect(r);
 }
 
 void CanvasItem::drawPixelGrid(QPainter *painter) const
@@ -213,6 +252,13 @@ void CanvasItem::mousePressEvent(QMouseEvent *event)
         return;
     }
 
+    if (m_tool == Selection) {
+        m_selection.pointerPress(imagePos);
+        selectionUpdated();
+        event->accept();
+        return;
+    }
+
     m_stroking = true;
     m_beforeStroke = m_document->image(); // copy-on-write snapshot
     m_damage = QRect();
@@ -232,6 +278,12 @@ void CanvasItem::mouseMoveEvent(QMouseEvent *event)
 
     if (m_picking) {
         pickColor(toImage(event->position()));
+        event->accept();
+        return;
+    }
+    if (m_tool == Selection) {
+        m_selection.pointerMove(toImage(event->position()));
+        selectionUpdated();
         event->accept();
         return;
     }
@@ -256,6 +308,12 @@ void CanvasItem::mouseReleaseEvent(QMouseEvent *event)
 
     if (m_picking) {
         m_picking = false;
+        event->accept();
+        return;
+    }
+    if (m_tool == Selection) {
+        m_selection.pointerRelease(toImage(event->position()));
+        selectionUpdated();
         event->accept();
         return;
     }
@@ -312,10 +370,104 @@ Tool *CanvasItem::activeTool()
     case Fill:
         return &m_fill;
     case Eyedropper: // handled before tools are consulted
+    case Selection:  // handled by the selection controller
     case Pencil:
         break;
     }
     return &m_pencil;
+}
+
+void CanvasItem::selectionUpdated()
+{
+    emit selectionChanged();
+    update();
+}
+
+void CanvasItem::undo()
+{
+    // While a float is pending, undo cancels it (nothing was committed yet);
+    // only a clean canvas unwinds real history.
+    if (m_selection.isFloating())
+        m_selection.cancelFloating();
+    else if (m_document)
+        m_document->undo();
+    selectionUpdated();
+}
+
+void CanvasItem::redo()
+{
+    m_selection.commit();
+    if (m_document)
+        m_document->redo();
+    selectionUpdated();
+}
+
+void CanvasItem::cut()
+{
+    const QImage image = m_selection.takeCut();
+    if (!image.isNull())
+        m_clipboard.setImage(image);
+    selectionUpdated();
+}
+
+void CanvasItem::copy()
+{
+    QImage image = m_selection.copyImage();
+    if (image.isNull() && m_document)
+        image = m_document->image(); // no selection: copy the whole image
+    if (!image.isNull())
+        m_clipboard.setImage(image);
+}
+
+void CanvasItem::paste()
+{
+    if (!m_document || !m_clipboard.hasImage())
+        return;
+    setTool(Selection);
+    m_selection.paste(m_clipboard.image(),
+                      toImage(QPointF(width() / 2, height() / 2)));
+    selectionUpdated();
+}
+
+void CanvasItem::deleteSelection()
+{
+    m_selection.deleteSelection();
+    selectionUpdated();
+}
+
+void CanvasItem::selectAll()
+{
+    if (!m_document)
+        return;
+    setTool(Selection);
+    m_selection.selectAll();
+    selectionUpdated();
+}
+
+void CanvasItem::escape()
+{
+    if (m_selection.isFloating())
+        m_selection.cancelFloating();
+    else
+        m_selection.deselect();
+    selectionUpdated();
+}
+
+void CanvasItem::crop()
+{
+    if (!m_document)
+        return;
+    m_selection.commit();
+    const QRect rect = m_selection.cropRect();
+    if (!rect.isNull())
+        m_document->cropTo(rect);
+    selectionUpdated();
+}
+
+void CanvasItem::commitSelection()
+{
+    m_selection.commit();
+    selectionUpdated();
 }
 
 ToolContext CanvasItem::toolContext() const

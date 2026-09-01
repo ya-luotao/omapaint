@@ -43,14 +43,17 @@ ApplicationWindow {
     }
 
     function requestNew() {
+        canvas.commitSelection()
         confirmDiscard(() => doc.newDocument(startupSize.width, startupSize.height))
     }
 
     function requestOpen() {
+        canvas.commitSelection()
         confirmDiscard(() => openDialog.open())
     }
 
     function requestSave() {
+        canvas.commitSelection()
         if (doc.filePath.length > 0) {
             if (!doc.save())
                 errorDialog.show(qsTr("Could not save: %1").arg(doc.lastError))
@@ -72,7 +75,8 @@ ApplicationWindow {
         onNewRequested: window.requestNew()
         onOpenRequested: window.requestOpen()
         onSaveRequested: window.requestSave()
-        onSaveAsRequested: saveDialog.open()
+        onSaveAsRequested: { canvas.commitSelection(); saveDialog.open() }
+        onResizeRequested: (mode) => resizeDialog.openFor(mode)
     }
 
     footer: ColumnLayout {
@@ -144,7 +148,10 @@ ApplicationWindow {
 
     FileDialog {
         id: openDialog
-        nameFilters: [qsTr("PNG images (*.png)"), qsTr("All files (*)")]
+        nameFilters: [
+            qsTr("Images (*.png *.jpg *.jpeg *.webp)"),
+            qsTr("All files (*)"),
+        ]
         onAccepted: {
             if (!doc.load(selectedFile))
                 errorDialog.show(qsTr("Could not open: %1").arg(doc.lastError))
@@ -155,10 +162,45 @@ ApplicationWindow {
         id: saveDialog
         fileMode: FileDialog.SaveFile
         defaultSuffix: "png"
-        nameFilters: [qsTr("PNG images (*.png)")]
+        nameFilters: [
+            qsTr("PNG images (*.png)"),
+            qsTr("JPEG images (*.jpg *.jpeg)"),
+            qsTr("WebP images (*.webp)"),
+        ]
         onAccepted: {
             if (!doc.saveAs(selectedFile))
                 errorDialog.show(qsTr("Could not save: %1").arg(doc.lastError))
+        }
+    }
+
+    Dialog {
+        id: resizeDialog
+        property bool canvasMode: false
+        title: canvasMode ? qsTr("Resize canvas") : qsTr("Resize image")
+        modal: true
+        anchors.centerIn: parent
+        standardButtons: Dialog.Ok | Dialog.Cancel
+
+        function openFor(mode) {
+            canvasMode = (mode === "canvas")
+            widthSpin.value = doc.imageSize.width
+            heightSpin.value = doc.imageSize.height
+            open()
+        }
+
+        onAccepted: {
+            canvas.commitSelection()
+            if (canvasMode)
+                doc.resizeCanvas(widthSpin.value, heightSpin.value)
+            else
+                doc.resizeImage(widthSpin.value, heightSpin.value)
+        }
+
+        RowLayout {
+            SpinBox { id: widthSpin; from: 1; to: 8192; editable: true }
+            Label { text: "×" }
+            SpinBox { id: heightSpin; from: 1; to: 8192; editable: true }
+            Label { text: qsTr("px") }
         }
     }
 
@@ -198,8 +240,17 @@ ApplicationWindow {
     Shortcut { sequences: [StandardKey.Open]; onActivated: window.requestOpen() }
     Shortcut { sequences: [StandardKey.Save]; onActivated: window.requestSave() }
     Shortcut { sequences: [StandardKey.SaveAs]; onActivated: saveDialog.open() }
-    Shortcut { sequences: [StandardKey.Undo]; onActivated: doc.undo() }
-    Shortcut { sequence: "Ctrl+Shift+Z"; onActivated: doc.redo() }
+    // Undo/redo must go through the canvas so a pending floating selection
+    // is cancelled/committed instead of history unwinding underneath it.
+    Shortcut { sequences: [StandardKey.Undo]; onActivated: canvas.undo() }
+    Shortcut { sequence: "Ctrl+Shift+Z"; onActivated: canvas.redo() }
+
+    Shortcut { sequences: [StandardKey.Cut]; onActivated: canvas.cut() }
+    Shortcut { sequences: [StandardKey.Copy]; onActivated: canvas.copy() }
+    Shortcut { sequences: [StandardKey.Paste]; onActivated: canvas.paste() }
+    Shortcut { sequences: [StandardKey.SelectAll]; onActivated: canvas.selectAll() }
+    Shortcut { sequences: [StandardKey.Delete]; onActivated: canvas.deleteSelection() }
+    Shortcut { sequence: "Escape"; onActivated: canvas.escape() }
 
     Shortcut { sequence: "P"; onActivated: canvas.tool = CanvasItem.Pencil }
     Shortcut { sequence: "B"; onActivated: canvas.tool = CanvasItem.Brush }
@@ -209,6 +260,7 @@ ApplicationWindow {
     Shortcut { sequence: "O"; onActivated: canvas.tool = CanvasItem.Ellipse }
     Shortcut { sequence: "F"; onActivated: canvas.tool = CanvasItem.Fill }
     Shortcut { sequence: "I"; onActivated: canvas.tool = CanvasItem.Eyedropper }
+    Shortcut { sequence: "S"; onActivated: canvas.tool = CanvasItem.Selection }
 
     Shortcut { sequence: "["; onActivated: canvas.brushSize = canvas.brushSize - 1 }
     Shortcut { sequence: "]"; onActivated: canvas.brushSize = canvas.brushSize + 1 }

@@ -18,12 +18,13 @@ Just a fast, obvious utility that shares Omarchy's theme and technology stack
 
 ## Status
 
-**v0.0.2 — Basic Paint.** A usable small paint program: pencil, brush,
-eraser, line, rectangle, ellipse, flood fill, and eyedropper; brush size;
-a classic quick-access color palette; zoom from 25% to 1600% with an optional
-pixel grid; undo/redo across every tool; PNG open/save with unsaved-changes
-protection. See [PLAN.md](PLAN.md) for the goals, architecture, and milestone
-roadmap.
+**v0.0.3 — Edit Images.** Screenshots and images can now be edited in place:
+rectangular selection with floating move (one undo step per move), cut, copy
+and paste through the Wayland clipboard, crop to selection, image and canvas
+resize, and JPEG/WebP alongside PNG. Plus everything from earlier milestones:
+pencil, brush, eraser, shapes, flood fill, eyedropper, color palette, zoom
+25%–1600% with a pixel grid, and undo/redo across every tool. See
+[PLAN.md](PLAN.md) for the goals, architecture, and milestone roadmap.
 
 ## Building
 

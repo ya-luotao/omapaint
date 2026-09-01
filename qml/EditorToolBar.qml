@@ -13,6 +13,7 @@ ToolBar {
     signal openRequested()
     signal saveRequested()
     signal saveAsRequested()
+    signal resizeRequested(string mode)
 
     RowLayout {
         anchors.fill: parent
@@ -39,13 +40,29 @@ ToolBar {
 
         ToolButton {
             text: qsTr("Undo")
-            enabled: root.doc.canUndo
-            onClicked: root.doc.undo()
+            enabled: root.doc.canUndo || root.canvas.floating
+            onClicked: root.canvas.undo()
         }
         ToolButton {
             text: qsTr("Redo")
             enabled: root.doc.canRedo
-            onClicked: root.doc.redo()
+            onClicked: root.canvas.redo()
+        }
+
+        ToolSeparator {}
+
+        ToolButton {
+            text: qsTr("Crop")
+            enabled: root.canvas.hasSelection
+            onClicked: root.canvas.crop()
+        }
+        ToolButton {
+            text: qsTr("Resize")
+            onClicked: root.resizeRequested("image")
+        }
+        ToolButton {
+            text: qsTr("Canvas")
+            onClicked: root.resizeRequested("canvas")
         }
 
         ToolSeparator {}

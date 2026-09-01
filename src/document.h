@@ -44,12 +44,24 @@ public:
     Q_INVOKABLE void undo();
     Q_INVOKABLE void redo();
 
+    // Whole-image edits; each pushes one full-snapshot ImageCommand.
+    Q_INVOKABLE void resizeImage(int width, int height);
+    Q_INVOKABLE void resizeCanvas(int width, int height);
+    void cropTo(const QRect &rect);
+
     bool loadFile(const QString &path);
     bool saveFile(const QString &path);
 
     // Overwrites (CompositionMode_Source, alpha included) the given region.
     // Used by undo commands to restore before/after pixels.
     void applyRegion(const QImage &region, const QPoint &topLeft);
+
+    // Replaces the whole image (used by ImageCommand undo/redo).
+    void setImage(const QImage &image);
+
+    // For collaborators (selection controller) that paint into image()
+    // directly and need the views refreshed.
+    void notifyRegionChanged(const QRect &rect) { emit regionChanged(rect); }
 
 signals:
     void dirtyChanged();

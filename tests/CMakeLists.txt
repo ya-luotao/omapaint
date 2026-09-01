@@ -4,9 +4,12 @@ set(OMAPAINT_CORE_SOURCES
     ${CMAKE_SOURCE_DIR}/src/document.cpp
     ${CMAKE_SOURCE_DIR}/src/image_io.cpp
     ${CMAKE_SOURCE_DIR}/src/canvas_view.cpp
+    ${CMAKE_SOURCE_DIR}/src/selection_controller.cpp
+    ${CMAKE_SOURCE_DIR}/src/clipboard.cpp
     ${CMAKE_SOURCE_DIR}/src/tools/tool.cpp
     ${CMAKE_SOURCE_DIR}/src/tools/fill_tool.cpp
     ${CMAKE_SOURCE_DIR}/src/commands/draw_command.cpp
+    ${CMAKE_SOURCE_DIR}/src/commands/image_command.cpp
 )
 
 function(omapaint_add_test name source)
@@ -22,3 +25,5 @@ omapaint_add_test(tst_image_io image_io/tst_image_io.cpp)
 omapaint_add_test(tst_tools tools/tst_tools.cpp)
 omapaint_add_test(tst_undo undo/tst_undo.cpp)
 omapaint_add_test(tst_canvas_view canvas_view/tst_canvas_view.cpp)
+omapaint_add_test(tst_selection selection/tst_selection.cpp)
+omapaint_add_test(tst_commands commands/tst_commands.cpp)

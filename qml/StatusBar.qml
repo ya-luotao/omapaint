@@ -34,6 +34,13 @@ Frame {
             text: qsTr("Zoom: %1%").arg(Math.round(root.canvas.zoom * 100))
         }
 
+        Label {
+            visible: root.canvas.hasSelection
+            text: qsTr("Selection: %1 × %2")
+                  .arg(root.canvas.selectionRect.width)
+                  .arg(root.canvas.selectionRect.height)
+        }
+
         Item { Layout.fillWidth: true }
     }
 }

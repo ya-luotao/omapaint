@@ -1,5 +1,6 @@
 #include "image_io.h"
 
+#include <QImageWriter>
 #include <QTemporaryDir>
 #include <QtTest>
 
@@ -11,6 +12,9 @@ private slots:
     void pngRoundTripPreservesPixels();
     void pngRoundTripPreservesAlpha();
     void loadNormalizesFormat();
+    void jpegSaveFlattensAlphaOntoWhite();
+    void jpegRoundTripStaysOpaqueAndSized();
+    void webpRoundTripPreservesPixels();
     void loadMissingFileFails();
     void loadInvalidFileFails();
     void saveToBadPathFails();
@@ -62,6 +66,61 @@ void TestImageIo::loadNormalizesFormat()
     QImage loaded;
     QVERIFY(ImageIo::load(path, &loaded));
     QCOMPARE(loaded.format(), QImage::Format_ARGB32_Premultiplied);
+}
+
+void TestImageIo::jpegSaveFlattensAlphaOntoWhite()
+{
+    QTemporaryDir dir;
+    const QString path = dir.filePath("flat.jpg");
+
+    QImage original(10, 10, QImage::Format_ARGB32_Premultiplied);
+    original.fill(Qt::transparent);
+    original.setPixelColor(5, 5, QColor(255, 0, 0));
+
+    QVERIFY(ImageIo::save(path, original));
+
+    QImage loaded;
+    QVERIFY(ImageIo::load(path, &loaded));
+    // Transparent areas must come back white, not black.
+    const QColor corner = loaded.pixelColor(0, 0);
+    QVERIFY(corner.red() > 240 && corner.green() > 240 && corner.blue() > 240);
+}
+
+void TestImageIo::jpegRoundTripStaysOpaqueAndSized()
+{
+    QTemporaryDir dir;
+    const QString path = dir.filePath("rt.jpeg");
+
+    QImage original(33, 21, QImage::Format_ARGB32_Premultiplied);
+    original.fill(QColor(10, 200, 60));
+
+    QVERIFY(ImageIo::save(path, original));
+
+    QImage loaded;
+    QVERIFY(ImageIo::load(path, &loaded));
+    QCOMPARE(loaded.size(), original.size());
+    // Lossy: no per-pixel comparison, but it must be opaque and roughly green.
+    QVERIFY(loaded.pixelColor(16, 10).alpha() == 255);
+    QVERIFY(loaded.pixelColor(16, 10).green() > 150);
+}
+
+void TestImageIo::webpRoundTripPreservesPixels()
+{
+    if (!QImageWriter::supportedImageFormats().contains("webp"))
+        QSKIP("webp plugin (qt6-imageformats) not available");
+
+    QTemporaryDir dir;
+    const QString path = dir.filePath("rt.webp");
+
+    QImage original(20, 10, QImage::Format_ARGB32_Premultiplied);
+    original.fill(Qt::transparent);
+    original.setPixelColor(3, 4, QColor(10, 20, 30));
+
+    QVERIFY(ImageIo::save(path, original));
+
+    QImage loaded;
+    QVERIFY(ImageIo::load(path, &loaded));
+    QCOMPARE(loaded, original); // saved at quality 100 = lossless webp
 }
 
 void TestImageIo::loadMissingFileFails()

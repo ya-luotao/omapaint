@@ -1,5 +1,6 @@
 #include "document.h"
 
+#include "commands/image_command.h"
 #include "image_io.h"
 
 #include <QFileInfo>
@@ -97,6 +98,57 @@ bool Document::saveFile(const QString &path)
     m_undoStack.setClean();
     setFilePath(path);
     return true;
+}
+
+void Document::resizeImage(int width, int height)
+{
+    width = qMax(1, width);
+    height = qMax(1, height);
+    if (QSize(width, height) == m_image.size())
+        return;
+
+    const QImage after =
+        m_image.scaled(width, height, Qt::IgnoreAspectRatio,
+                       Qt::SmoothTransformation)
+            .convertToFormat(QImage::Format_ARGB32_Premultiplied);
+    m_undoStack.push(new ImageCommand(this, m_image, after,
+                                      QStringLiteral("Resize image")));
+}
+
+void Document::resizeCanvas(int width, int height)
+{
+    width = qMax(1, width);
+    height = qMax(1, height);
+    if (QSize(width, height) == m_image.size())
+        return;
+
+    // New area is white, matching classic Paint and the common "add caption
+    // space to a screenshot" use.
+    QImage after(width, height, QImage::Format_ARGB32_Premultiplied);
+    after.fill(Qt::white);
+    QPainter painter(&after);
+    painter.setCompositionMode(QPainter::CompositionMode_Source);
+    painter.drawImage(0, 0, m_image);
+    painter.end();
+
+    m_undoStack.push(new ImageCommand(this, m_image, after,
+                                      QStringLiteral("Resize canvas")));
+}
+
+void Document::cropTo(const QRect &rect)
+{
+    const QRect target = rect.intersected(m_image.rect());
+    if (target.isEmpty() || target == m_image.rect())
+        return;
+
+    m_undoStack.push(new ImageCommand(this, m_image, m_image.copy(target),
+                                      QStringLiteral("Crop")));
+}
+
+void Document::setImage(const QImage &image)
+{
+    m_image = image;
+    emit imageChanged();
 }
 
 void Document::applyRegion(const QImage &region, const QPoint &topLeft)
