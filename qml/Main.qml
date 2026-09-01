@@ -15,6 +15,7 @@ ApplicationWindow {
     property var pendingAction: null
     // Single-letter shortcuts must stand down while any text field is live.
     readonly property bool typing: textOverlay.visible || resizeDialog.visible
+                                   || aboutDialog.visible
 
     width: 1400
     height: 900
@@ -136,6 +137,7 @@ ApplicationWindow {
         onRotateRequested: (degrees) => window.requestRotate(degrees)
         onFlipRequested: (horizontal) => window.requestFlip(horizontal)
         onFontRequested: fontDialog.open()
+        onAboutRequested: aboutDialog.open()
     }
 
     footer: ColumnLayout {
@@ -266,6 +268,11 @@ ApplicationWindow {
             const url = drop.urls[0]
             window.requestOpenUrl(url)
         }
+    }
+
+    AboutDialog {
+        id: aboutDialog
+        canvas: canvas
     }
 
     FileDialog {
@@ -406,5 +413,6 @@ ApplicationWindow {
     }
     Shortcut { sequence: "G"; enabled: !window.typing; onActivated: canvas.pixelGrid = !canvas.pixelGrid }
     Shortcut { sequence: "Ctrl+R"; onActivated: window.requestRotate(90) }
+    Shortcut { sequence: "F1"; onActivated: aboutDialog.open() }
     Shortcut { sequence: "Ctrl+Shift+R"; onActivated: window.requestRotate(-90) }
 }

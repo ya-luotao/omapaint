@@ -1,10 +1,13 @@
 #include "canvas_item.h"
 
+#include "ruby.h"
+
 #include "canvas_view.h"
 #include "commands/draw_command.h"
 
 #include "text_renderer.h"
 
+#include <QRandomGenerator>
 #include <QMouseEvent>
 #include <QPainter>
 #include <QQuickWindow>
@@ -448,6 +451,25 @@ void CanvasItem::commitText(const QPointF &imagePos, const QString &text)
     m_document->undoStack()->push(
         new DrawCommand(m_document, damage, before.copy(damage),
                         m_document->image().copy(damage), QStringLiteral("Text")));
+}
+
+void CanvasItem::rubyWalk()
+{
+    if (!m_document)
+        return;
+    commitSelection();
+
+    const QImage before = m_document->image(); // copy-on-write
+    const QRect damage = Ruby::stampPawPrints(
+        m_document->image(), QColor("#c34043"),
+        QRandomGenerator::global()->generate());
+    if (damage.isEmpty())
+        return;
+
+    m_document->notifyRegionChanged(damage);
+    m_document->undoStack()->push(new DrawCommand(
+        m_document, damage, before.copy(damage),
+        m_document->image().copy(damage), QStringLiteral("Ruby's paw prints")));
 }
 
 bool CanvasItem::loadFromClipboard()

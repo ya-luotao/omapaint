@@ -2,6 +2,7 @@
 #include "demo_driver.h"
 #include "document.h"
 #include "image_io.h"
+#include "ruby.h"
 #include "theme.h"
 
 #include <QCommandLineParser>
@@ -10,6 +11,7 @@
 #include <QGuiApplication>
 #include <QIcon>
 #include <QQmlApplicationEngine>
+#include <QQuickImageProvider>
 #include <QQuickWindow>
 #include <QRegularExpression>
 
@@ -17,6 +19,30 @@
 #include <unistd.h>
 
 namespace {
+
+// Serves "image://ruby/<fur-color>" to QML so the About dialog can show
+// Ruby in the current palette without QML ever touching pixels.
+class RubyImageProvider : public QQuickImageProvider
+{
+public:
+    RubyImageProvider()
+        : QQuickImageProvider(QQuickImageProvider::Image)
+    {
+    }
+
+    QImage requestImage(const QString &id, QSize *size,
+                        const QSize &requestedSize) override
+    {
+        Q_UNUSED(requestedSize);
+        QColor fur(u'#' + id);
+        if (!fur.isValid())
+            fur = QColor("#dcd7ba");
+        const QImage image = Ruby::portrait(fur, QColor("#c34043"));
+        if (size)
+            *size = image.size();
+        return image;
+    }
+};
 
 QSize parseCanvasSize(const QString &spec, const QSize &fallback)
 {
@@ -113,6 +139,7 @@ int main(int argc, char *argv[])
     }
 
     QQmlApplicationEngine engine;
+    engine.addImageProvider(QStringLiteral("ruby"), new RubyImageProvider);
     engine.setInitialProperties({
         {QStringLiteral("startupFile"), startupFile},
         {QStringLiteral("startupSize"), canvasSize},

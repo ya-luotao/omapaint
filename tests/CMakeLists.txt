@@ -10,6 +10,7 @@ set(OMAPAINT_CORE_SOURCES
     ${CMAKE_SOURCE_DIR}/src/tools/fill_tool.cpp
     ${CMAKE_SOURCE_DIR}/src/tools/pixelate_tool.cpp
     ${CMAKE_SOURCE_DIR}/src/text_renderer.cpp
+    ${CMAKE_SOURCE_DIR}/src/ruby.cpp
     ${CMAKE_SOURCE_DIR}/src/commands/draw_command.cpp
     ${CMAKE_SOURCE_DIR}/src/commands/image_command.cpp
 )

@@ -19,6 +19,7 @@ ToolBar {
     signal rotateRequested(int degrees)
     signal flipRequested(bool horizontal)
     signal fontRequested()
+    signal aboutRequested()
 
     RowLayout {
         anchors.fill: parent
@@ -141,5 +142,12 @@ ToolBar {
         }
 
         Item { Layout.fillWidth: true }
+
+        ToolButton {
+            text: qsTr("About")
+            onClicked: root.aboutRequested()
+            ToolTip.visible: hovered
+            ToolTip.text: qsTr("About OmaPaint (F1)")
+        }
     }
 }

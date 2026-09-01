@@ -23,6 +23,7 @@ qt_add_executable(omapaint
     src/tools/fill_tool.cpp src/tools/fill_tool.h
     src/tools/pixelate_tool.cpp src/tools/pixelate_tool.h
     src/text_renderer.cpp src/text_renderer.h
+    src/ruby.cpp src/ruby.h
     src/commands/draw_command.cpp src/commands/draw_command.h
     src/commands/image_command.cpp src/commands/image_command.h
     src/theme.cpp src/theme.h
@@ -61,6 +62,7 @@ qt_add_qml_module(omapaint
         qml/ToolPanel.qml
         qml/ColorPalette.qml
         qml/StatusBar.qml
+        qml/AboutDialog.qml
 )
 
 target_include_directories(omapaint PRIVATE src)

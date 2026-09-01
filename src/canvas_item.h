@@ -142,6 +142,8 @@ public:
 
     // Text tool: the QML overlay edits, C++ renders on commit.
     Q_INVOKABLE void commitText(const QPointF &imagePos, const QString &text);
+    // Easter egg (About dialog): Ruby walks across the canvas, one undo step.
+    Q_INVOKABLE void rubyWalk();
 
     // --clipboard launch: replace the document with the clipboard image.
     Q_INVOKABLE bool loadFromClipboard();
