@@ -17,21 +17,33 @@ Frame {
         anchors.fill: parent
         spacing: 8
 
-        // Current foreground color; click for the full color dialog.
+        // Foreground over background, classic Paint style. Click the front
+        // swatch for the color dialog; X swaps them.
         AbstractButton {
-            implicitWidth: 34
-            implicitHeight: 34
+            implicitWidth: 40
+            implicitHeight: 40
             onClicked: root.customColorRequested()
 
-            contentItem: Rectangle {
-                color: root.canvas.foregroundColor
-                border.color: root.palette.mid
-                border.width: 1
-                radius: 3
+            contentItem: Item {
+                Rectangle {
+                    x: 12; y: 12
+                    width: 24; height: 24
+                    color: root.canvas.backgroundColor
+                    border.color: root.palette.mid
+                    border.width: 1
+                    radius: 3
+                }
+                Rectangle {
+                    width: 24; height: 24
+                    color: root.canvas.foregroundColor
+                    border.color: root.palette.mid
+                    border.width: 1
+                    radius: 3
+                }
             }
 
             ToolTip.visible: hovered
-            ToolTip.text: qsTr("Custom color…")
+            ToolTip.text: qsTr("Foreground / background — click for custom, X swaps, right-click a swatch sets background")
         }
 
         GridLayout {
@@ -52,6 +64,12 @@ Frame {
                     implicitWidth: 16
                     implicitHeight: 16
                     onClicked: root.canvas.foregroundColor = modelData
+
+                    // Right click sets the background color.
+                    TapHandler {
+                        acceptedButtons: Qt.RightButton
+                        onTapped: root.canvas.backgroundColor = parent.modelData
+                    }
 
                     contentItem: Rectangle {
                         color: parent.modelData

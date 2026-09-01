@@ -45,6 +45,17 @@ void Document::newDocument(int width, int height)
     emit imageChanged();
 }
 
+void Document::newFromImage(const QImage &image)
+{
+    if (image.isNull())
+        return;
+    m_image = image.convertToFormat(QImage::Format_ARGB32_Premultiplied);
+    m_undoStack.clear();
+    m_undoStack.setClean();
+    setFilePath(QString());
+    emit imageChanged();
+}
+
 bool Document::load(const QUrl &url)
 {
     return loadFile(url.isLocalFile() ? url.toLocalFile() : url.toString());

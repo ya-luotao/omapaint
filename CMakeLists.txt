@@ -17,9 +17,12 @@ qt_add_executable(omapaint
     src/tools/brush_tool.h
     src/tools/eraser_tool.h
     src/tools/line_tool.h
+    src/tools/arrow_tool.h
     src/tools/rectangle_tool.h
     src/tools/ellipse_tool.h
     src/tools/fill_tool.cpp src/tools/fill_tool.h
+    src/tools/pixelate_tool.cpp src/tools/pixelate_tool.h
+    src/text_renderer.cpp src/text_renderer.h
     src/commands/draw_command.cpp src/commands/draw_command.h
     src/commands/image_command.cpp src/commands/image_command.h
 )

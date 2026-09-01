@@ -40,6 +40,10 @@ int main(int argc, char *argv[])
         QStringLiteral("Start with a blank canvas of the given size."),
         QStringLiteral("WxH"));
     parser.addOption(newOption);
+    const QCommandLineOption clipboardOption(
+        QStringLiteral("clipboard"),
+        QStringLiteral("Open the image currently on the clipboard."));
+    parser.addOption(clipboardOption);
     parser.process(app);
 
     const QSize canvasSize =
@@ -52,6 +56,9 @@ int main(int argc, char *argv[])
     engine.setInitialProperties({
         {QStringLiteral("startupFile"), startupFile},
         {QStringLiteral("startupSize"), canvasSize},
+        // Wayland only exposes the clipboard to the focused window, so the
+        // QML side defers the actual read until first activation.
+        {QStringLiteral("startupClipboard"), parser.isSet(clipboardOption)},
     });
 
     QObject::connect(

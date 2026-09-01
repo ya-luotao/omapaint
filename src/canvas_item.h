@@ -7,9 +7,13 @@
 #include "tools/ellipse_tool.h"
 #include "tools/eraser_tool.h"
 #include "tools/fill_tool.h"
+#include "tools/arrow_tool.h"
 #include "tools/line_tool.h"
 #include "tools/pencil_tool.h"
+#include "tools/pixelate_tool.h"
 #include "tools/rectangle_tool.h"
+
+#include <QFont>
 
 #include <QColor>
 #include <QQuickPaintedItem>
@@ -30,6 +34,12 @@ class CanvasItem : public QQuickPaintedItem
     Q_PROPERTY(ToolType tool READ tool WRITE setTool NOTIFY toolChanged)
     Q_PROPERTY(QColor foregroundColor READ foregroundColor WRITE setForegroundColor
                    NOTIFY foregroundColorChanged)
+    Q_PROPERTY(QColor backgroundColor READ backgroundColor WRITE setBackgroundColor
+                   NOTIFY backgroundColorChanged)
+    Q_PROPERTY(ShapeFillMode shapeFillMode READ shapeFillMode WRITE setShapeFillMode
+                   NOTIFY shapeFillModeChanged)
+    Q_PROPERTY(QFont textFont READ textFont WRITE setTextFont NOTIFY textFontChanged)
+    Q_PROPERTY(QPointF viewOrigin READ viewOrigin NOTIFY viewChanged)
     Q_PROPERTY(int brushSize READ brushSize WRITE setBrushSize NOTIFY brushSizeChanged)
     Q_PROPERTY(qreal zoom READ zoom WRITE setZoom NOTIFY zoomChanged)
     Q_PROPERTY(qreal panX READ panX WRITE setPanX NOTIFY panChanged)
@@ -53,8 +63,19 @@ public:
         Fill,
         Eyedropper,
         Selection,
+        Arrow,
+        Pixelate,
+        Text,
     };
     Q_ENUM(ToolType)
+
+    // Mirrors ShapeFill for QML.
+    enum ShapeFillMode {
+        Outline,
+        Filled,
+        Solid,
+    };
+    Q_ENUM(ShapeFillMode)
 
     explicit CanvasItem(QQuickItem *parent = nullptr);
 
@@ -66,6 +87,17 @@ public:
 
     QColor foregroundColor() const { return m_foregroundColor; }
     void setForegroundColor(const QColor &color);
+
+    QColor backgroundColor() const { return m_backgroundColor; }
+    void setBackgroundColor(const QColor &color);
+
+    ShapeFillMode shapeFillMode() const { return m_shapeFillMode; }
+    void setShapeFillMode(ShapeFillMode mode);
+
+    QFont textFont() const { return m_textFont; }
+    void setTextFont(const QFont &font);
+
+    QPointF viewOrigin() const { return snappedOrigin(); }
 
     int brushSize() const { return m_brushSize; }
     void setBrushSize(int size);
@@ -106,6 +138,13 @@ public:
     Q_INVOKABLE void escape(); // cancel a float, else drop the marquee
     Q_INVOKABLE void crop();
     Q_INVOKABLE void commitSelection();
+    Q_INVOKABLE void swapColors();
+
+    // Text tool: the QML overlay edits, C++ renders on commit.
+    Q_INVOKABLE void commitText(const QPointF &imagePos, const QString &text);
+
+    // --clipboard launch: replace the document with the clipboard image.
+    Q_INVOKABLE bool loadFromClipboard();
 
     void paint(QPainter *painter) override;
 
@@ -120,11 +159,18 @@ signals:
     void hoverChanged();
     void selectionChanged();
     void canPasteChanged();
+    void backgroundColorChanged();
+    void shapeFillModeChanged();
+    void textFontChanged();
+    void viewChanged();
+    // Pressing with the text tool: QML opens/moves the editing overlay.
+    void textEditRequested(QPointF imagePos);
     // Asks the enclosing Flickable to scroll to the given content offset
     // (emitted when zooming so the anchor point stays put).
     void panRequest(qreal x, qreal y);
 
 protected:
+    void geometryChange(const QRectF &newGeometry, const QRectF &oldGeometry) override;
     void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
@@ -151,6 +197,9 @@ private:
 
     ToolType m_tool = Pencil;
     QColor m_foregroundColor = Qt::black;
+    QColor m_backgroundColor = Qt::white;
+    ShapeFillMode m_shapeFillMode = Outline;
+    QFont m_textFont;
     int m_brushSize = 6;
     qreal m_zoom = 1.0;
     QPointF m_pan;
@@ -166,6 +215,8 @@ private:
     RectangleTool m_rectangle;
     EllipseTool m_ellipse;
     FillTool m_fill;
+    ArrowTool m_arrow;
+    PixelateTool m_pixelate;
 
     SelectionController m_selection;
     Clipboard m_clipboard;

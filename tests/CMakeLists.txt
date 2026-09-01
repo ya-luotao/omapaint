@@ -8,6 +8,8 @@ set(OMAPAINT_CORE_SOURCES
     ${CMAKE_SOURCE_DIR}/src/clipboard.cpp
     ${CMAKE_SOURCE_DIR}/src/tools/tool.cpp
     ${CMAKE_SOURCE_DIR}/src/tools/fill_tool.cpp
+    ${CMAKE_SOURCE_DIR}/src/tools/pixelate_tool.cpp
+    ${CMAKE_SOURCE_DIR}/src/text_renderer.cpp
     ${CMAKE_SOURCE_DIR}/src/commands/draw_command.cpp
     ${CMAKE_SOURCE_DIR}/src/commands/image_command.cpp
 )
@@ -27,3 +29,4 @@ omapaint_add_test(tst_undo undo/tst_undo.cpp)
 omapaint_add_test(tst_canvas_view canvas_view/tst_canvas_view.cpp)
 omapaint_add_test(tst_selection selection/tst_selection.cpp)
 omapaint_add_test(tst_commands commands/tst_commands.cpp)
+omapaint_add_test(tst_annotate annotate/tst_annotate.cpp)

@@ -18,12 +18,14 @@ Just a fast, obvious utility that shares Omarchy's theme and technology stack
 
 ## Status
 
-**v0.0.3 — Edit Images.** Screenshots and images can now be edited in place:
-rectangular selection with floating move (one undo step per move), cut, copy
-and paste through the Wayland clipboard, crop to selection, image and canvas
-resize, and JPEG/WebP alongside PNG. Plus everything from earlier milestones:
-pencil, brush, eraser, shapes, flood fill, eyedropper, color palette, zoom
-25%–1600% with a pixel grid, and undo/redo across every tool. See
+**v0.0.4 — Annotate.** Everyday screenshot annotation works end to end: text
+(edit in place before committing, any font via the font dialog), arrows,
+outlined/filled/solid rectangles and ellipses with a foreground/background
+color pair, a pixelate tool for hiding sensitive detail, and
+`omapaint --clipboard` to open the image currently on the clipboard. On top
+of the earlier milestones: selection with floating move, cut/copy/paste,
+crop, image/canvas resize, PNG/JPEG/WebP, pencil/brush/eraser/shapes/fill,
+zoom 25%–1600% with a pixel grid, and undo/redo across every tool. See
 [PLAN.md](PLAN.md) for the goals, architecture, and milestone roadmap.
 
 ## Building

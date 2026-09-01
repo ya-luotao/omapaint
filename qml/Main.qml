@@ -9,7 +9,11 @@ ApplicationWindow {
 
     property url startupFile
     property size startupSize: Qt.size(1280, 720)
+    property bool startupClipboard: false
+    property bool clipboardLoaded: false
     property var pendingAction: null
+    // Single-letter shortcuts must stand down while any text field is live.
+    readonly property bool typing: textOverlay.visible || resizeDialog.visible
 
     width: 1400
     height: 900
@@ -20,6 +24,16 @@ ApplicationWindow {
 
     Document {
         id: doc
+    }
+
+    // Wayland only exposes the clipboard to the focused window, so the
+    // --clipboard read waits for first activation instead of startup.
+    onActiveChanged: {
+        if (active && startupClipboard && !clipboardLoaded) {
+            clipboardLoaded = true
+            if (!canvas.loadFromClipboard())
+                errorDialog.show(qsTr("The clipboard does not contain an image."))
+        }
     }
 
     Component.onCompleted: {
@@ -42,18 +56,23 @@ ApplicationWindow {
         discardDialog.open()
     }
 
-    function requestNew() {
+    function commitPendingEdits() {
+        textOverlay.commit()
         canvas.commitSelection()
+    }
+
+    function requestNew() {
+        commitPendingEdits()
         confirmDiscard(() => doc.newDocument(startupSize.width, startupSize.height))
     }
 
     function requestOpen() {
-        canvas.commitSelection()
+        commitPendingEdits()
         confirmDiscard(() => openDialog.open())
     }
 
     function requestSave() {
-        canvas.commitSelection()
+        commitPendingEdits()
         if (doc.filePath.length > 0) {
             if (!doc.save())
                 errorDialog.show(qsTr("Could not save: %1").arg(doc.lastError))
@@ -75,8 +94,9 @@ ApplicationWindow {
         onNewRequested: window.requestNew()
         onOpenRequested: window.requestOpen()
         onSaveRequested: window.requestSave()
-        onSaveAsRequested: { canvas.commitSelection(); saveDialog.open() }
+        onSaveAsRequested: { window.commitPendingEdits(); saveDialog.open() }
         onResizeRequested: (mode) => resizeDialog.openFor(mode)
+        onFontRequested: fontDialog.open()
     }
 
     footer: ColumnLayout {
@@ -142,6 +162,55 @@ ApplicationWindow {
                 id: hbar
                 orientation: Qt.Horizontal
                 anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
+            }
+
+            // The text tool's editable-before-commit box. WYSIWYG: same font
+            // scaled by zoom, same color; commits into the image via C++.
+            TextArea {
+                id: textOverlay
+                visible: false
+                property point imagePos
+                x: canvas.viewOrigin.x + imagePos.x * canvas.zoom
+                y: canvas.viewOrigin.y + imagePos.y * canvas.zoom
+                font.family: canvas.textFont.family
+                font.pixelSize: Math.max(4, canvas.textFont.pixelSize * canvas.zoom)
+                font.bold: canvas.textFont.bold
+                font.italic: canvas.textFont.italic
+                color: canvas.foregroundColor
+                padding: 0
+                background: Rectangle {
+                    color: "transparent"
+                    border.color: "#888888"
+                    border.width: 1
+                }
+
+                function commit() {
+                    if (!visible)
+                        return
+                    canvas.commitText(Qt.point(imagePos.x, imagePos.y), text)
+                    visible = false
+                    text = ""
+                }
+
+                function cancel() {
+                    visible = false
+                    text = ""
+                }
+
+                Keys.onEscapePressed: cancel()
+            }
+
+            Connections {
+                target: canvas
+                function onTextEditRequested(imagePos) {
+                    textOverlay.commit()
+                    textOverlay.imagePos = imagePos
+                    textOverlay.visible = true
+                    textOverlay.forceActiveFocus()
+                }
+                function onToolChanged() {
+                    textOverlay.commit()
+                }
             }
         }
     }
@@ -210,6 +279,12 @@ ApplicationWindow {
         onAccepted: canvas.foregroundColor = selectedColor
     }
 
+    FontDialog {
+        id: fontDialog
+        selectedFont: canvas.textFont
+        onAccepted: canvas.textFont = selectedFont
+    }
+
     MessageDialog {
         id: discardDialog
         title: qsTr("Unsaved changes")
@@ -247,26 +322,29 @@ ApplicationWindow {
 
     Shortcut { sequences: [StandardKey.Cut]; onActivated: canvas.cut() }
     Shortcut { sequences: [StandardKey.Copy]; onActivated: canvas.copy() }
-    Shortcut { sequences: [StandardKey.Paste]; onActivated: canvas.paste() }
-    Shortcut { sequences: [StandardKey.SelectAll]; onActivated: canvas.selectAll() }
-    Shortcut { sequences: [StandardKey.Delete]; onActivated: canvas.deleteSelection() }
-    Shortcut { sequence: "Escape"; onActivated: canvas.escape() }
+    Shortcut { sequences: [StandardKey.Paste]; enabled: !window.typing; onActivated: canvas.paste() }
+    Shortcut { sequences: [StandardKey.SelectAll]; enabled: !window.typing; onActivated: canvas.selectAll() }
+    Shortcut { sequences: [StandardKey.Delete]; enabled: !window.typing; onActivated: canvas.deleteSelection() }
+    Shortcut { sequence: "Escape"; enabled: !window.typing; onActivated: canvas.escape() }
 
-    Shortcut { sequence: "P"; onActivated: canvas.tool = CanvasItem.Pencil }
-    Shortcut { sequence: "B"; onActivated: canvas.tool = CanvasItem.Brush }
-    Shortcut { sequence: "E"; onActivated: canvas.tool = CanvasItem.Eraser }
-    Shortcut { sequence: "L"; onActivated: canvas.tool = CanvasItem.Line }
-    Shortcut { sequence: "R"; onActivated: canvas.tool = CanvasItem.Rectangle }
-    Shortcut { sequence: "O"; onActivated: canvas.tool = CanvasItem.Ellipse }
-    Shortcut { sequence: "F"; onActivated: canvas.tool = CanvasItem.Fill }
-    Shortcut { sequence: "I"; onActivated: canvas.tool = CanvasItem.Eyedropper }
-    Shortcut { sequence: "S"; onActivated: canvas.tool = CanvasItem.Selection }
+    Shortcut { sequence: "P"; enabled: !window.typing; onActivated: canvas.tool = CanvasItem.Pencil }
+    Shortcut { sequence: "B"; enabled: !window.typing; onActivated: canvas.tool = CanvasItem.Brush }
+    Shortcut { sequence: "E"; enabled: !window.typing; onActivated: canvas.tool = CanvasItem.Eraser }
+    Shortcut { sequence: "L"; enabled: !window.typing; onActivated: canvas.tool = CanvasItem.Line }
+    Shortcut { sequence: "R"; enabled: !window.typing; onActivated: canvas.tool = CanvasItem.Rectangle }
+    Shortcut { sequence: "O"; enabled: !window.typing; onActivated: canvas.tool = CanvasItem.Ellipse }
+    Shortcut { sequence: "F"; enabled: !window.typing; onActivated: canvas.tool = CanvasItem.Fill }
+    Shortcut { sequence: "I"; enabled: !window.typing; onActivated: canvas.tool = CanvasItem.Eyedropper }
+    Shortcut { sequence: "S"; enabled: !window.typing; onActivated: canvas.tool = CanvasItem.Selection }
+    Shortcut { sequence: "A"; enabled: !window.typing; onActivated: canvas.tool = CanvasItem.Arrow }
+    Shortcut { sequence: "T"; enabled: !window.typing; onActivated: canvas.tool = CanvasItem.Text }
+    Shortcut { sequence: "X"; enabled: !window.typing; onActivated: canvas.swapColors() }
 
-    Shortcut { sequence: "["; onActivated: canvas.brushSize = canvas.brushSize - 1 }
-    Shortcut { sequence: "]"; onActivated: canvas.brushSize = canvas.brushSize + 1 }
+    Shortcut { sequence: "["; enabled: !window.typing; onActivated: canvas.brushSize = canvas.brushSize - 1 }
+    Shortcut { sequence: "]"; enabled: !window.typing; onActivated: canvas.brushSize = canvas.brushSize + 1 }
 
-    Shortcut { sequences: ["+", "="]; onActivated: canvas.zoomIn() }
-    Shortcut { sequence: "-"; onActivated: canvas.zoomOut() }
+    Shortcut { sequences: ["+", "="]; enabled: !window.typing; onActivated: canvas.zoomIn() }
+    Shortcut { sequence: "-"; enabled: !window.typing; onActivated: canvas.zoomOut() }
     Shortcut { sequence: "Ctrl+0"; onActivated: canvas.resetZoom() }
-    Shortcut { sequence: "G"; onActivated: canvas.pixelGrid = !canvas.pixelGrid }
+    Shortcut { sequence: "G"; enabled: !window.typing; onActivated: canvas.pixelGrid = !canvas.pixelGrid }
 }

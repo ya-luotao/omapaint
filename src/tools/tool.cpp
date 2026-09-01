@@ -4,9 +4,10 @@
 
 namespace {
 
-QRect penAdjustedRect(const QRectF &bounds, const QPen &pen, const QImage &image)
+QRect penAdjustedRect(const QRectF &bounds, const QPen &pen, const QImage &image,
+                      qreal extraMargin = 0)
 {
-    const int margin = qCeil(pen.widthF() / 2.0) + 1;
+    const int margin = qCeil(pen.widthF() / 2.0 + extraMargin) + 1;
     return bounds.normalized()
         .adjusted(-margin, -margin, margin, margin)
         .toAlignedRect()
@@ -100,9 +101,25 @@ QRect ShapeTool::paintPreview(QImage &image, const QPointF &pos, const ToolConte
     painter.setRenderHint(QPainter::Antialiasing, false);
     painter.setPen(p);
     painter.setBrush(Qt::NoBrush);
-    drawShape(painter, m_anchor, pos);
+    drawShape(painter, m_anchor, pos, ctx);
     painter.end();
 
-    m_previewDamage = penAdjustedRect(QRectF(m_anchor, pos), p, image);
+    m_previewDamage = penAdjustedRect(QRectF(m_anchor, pos), p, image,
+                                      extraDamageMargin(ctx));
     return damage | m_previewDamage;
+}
+
+void ShapeTool::applyShapeFill(QPainter &painter, const ToolContext &ctx)
+{
+    switch (ctx.shapeFill) {
+    case ShapeFill::Outline:
+        painter.setBrush(Qt::NoBrush);
+        break;
+    case ShapeFill::Filled:
+        painter.setBrush(ctx.fillColor);
+        break;
+    case ShapeFill::Solid:
+        painter.setBrush(ctx.color);
+        break;
+    }
 }

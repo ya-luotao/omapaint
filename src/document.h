@@ -38,6 +38,8 @@ public:
     QUndoStack *undoStack() { return &m_undoStack; }
 
     Q_INVOKABLE void newDocument(int width, int height);
+    // New unsaved document from existing pixels (e.g. --clipboard launch).
+    void newFromImage(const QImage &image);
     Q_INVOKABLE bool load(const QUrl &url);
     Q_INVOKABLE bool save();
     Q_INVOKABLE bool saveAs(const QUrl &url);

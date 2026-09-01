@@ -3,6 +3,8 @@
 #include "canvas_view.h"
 #include "commands/draw_command.h"
 
+#include "text_renderer.h"
+
 #include <QMouseEvent>
 #include <QPainter>
 #include <QQuickWindow>
@@ -38,6 +40,13 @@ CanvasItem::CanvasItem(QQuickItem *parent)
     setAcceptedMouseButtons(Qt::LeftButton);
     setAcceptHoverEvents(true);
     connect(&m_clipboard, &Clipboard::changed, this, &CanvasItem::canPasteChanged);
+    m_textFont.setPixelSize(24);
+}
+
+void CanvasItem::geometryChange(const QRectF &newGeometry, const QRectF &oldGeometry)
+{
+    QQuickPaintedItem::geometryChange(newGeometry, oldGeometry);
+    emit viewChanged();
 }
 
 void CanvasItem::setDocument(Document *document)
@@ -58,6 +67,7 @@ void CanvasItem::setDocument(Document *document)
             m_stroking = false;
             m_selection.reset();
             emit selectionChanged();
+            emit viewChanged(); // image size affects the centering origin
             update();
         });
         m_documentConnections << connect(
@@ -90,6 +100,37 @@ void CanvasItem::setForegroundColor(const QColor &color)
     emit foregroundColorChanged();
 }
 
+void CanvasItem::setBackgroundColor(const QColor &color)
+{
+    if (m_backgroundColor == color)
+        return;
+    m_backgroundColor = color;
+    emit backgroundColorChanged();
+}
+
+void CanvasItem::setShapeFillMode(ShapeFillMode mode)
+{
+    if (m_shapeFillMode == mode)
+        return;
+    m_shapeFillMode = mode;
+    emit shapeFillModeChanged();
+}
+
+void CanvasItem::setTextFont(const QFont &font)
+{
+    if (m_textFont == font)
+        return;
+    m_textFont = font;
+    emit textFontChanged();
+}
+
+void CanvasItem::swapColors()
+{
+    std::swap(m_foregroundColor, m_backgroundColor);
+    emit foregroundColorChanged();
+    emit backgroundColorChanged();
+}
+
 void CanvasItem::setBrushSize(int size)
 {
     size = qBound(1, size, kMaxBrushSize);
@@ -106,6 +147,7 @@ void CanvasItem::setZoom(qreal zoom)
         return;
     m_zoom = zoom;
     emit zoomChanged();
+    emit viewChanged();
     update();
 }
 
@@ -115,6 +157,7 @@ void CanvasItem::setPanX(qreal x)
         return;
     m_pan.setX(x);
     emit panChanged();
+    emit viewChanged();
     update();
 }
 
@@ -124,6 +167,7 @@ void CanvasItem::setPanY(qreal y)
         return;
     m_pan.setY(y);
     emit panChanged();
+    emit viewChanged();
     update();
 }
 
@@ -259,6 +303,13 @@ void CanvasItem::mousePressEvent(QMouseEvent *event)
         return;
     }
 
+    if (m_tool == Text) {
+        setKeepMouseGrab(false);
+        emit textEditRequested(imagePos);
+        event->accept();
+        return;
+    }
+
     m_stroking = true;
     m_beforeStroke = m_document->image(); // copy-on-write snapshot
     m_damage = QRect();
@@ -357,6 +408,10 @@ void CanvasItem::wheelEvent(QWheelEvent *event)
 Tool *CanvasItem::activeTool()
 {
     switch (m_tool) {
+    case Arrow:
+        return &m_arrow;
+    case Pixelate:
+        return &m_pixelate;
     case Brush:
         return &m_brush;
     case Eraser:
@@ -371,10 +426,39 @@ Tool *CanvasItem::activeTool()
         return &m_fill;
     case Eyedropper: // handled before tools are consulted
     case Selection:  // handled by the selection controller
+    case Text:       // handled by the QML overlay
     case Pencil:
         break;
     }
     return &m_pencil;
+}
+
+void CanvasItem::commitText(const QPointF &imagePos, const QString &text)
+{
+    if (!m_document)
+        return;
+
+    const QImage before = m_document->image(); // copy-on-write
+    const QRect damage = TextRenderer::render(m_document->image(), imagePos,
+                                              text, m_textFont, m_foregroundColor);
+    if (damage.isEmpty())
+        return;
+
+    m_document->notifyRegionChanged(damage);
+    m_document->undoStack()->push(
+        new DrawCommand(m_document, damage, before.copy(damage),
+                        m_document->image().copy(damage), QStringLiteral("Text")));
+}
+
+bool CanvasItem::loadFromClipboard()
+{
+    if (!m_document || !m_clipboard.hasImage())
+        return false;
+    const QImage image = m_clipboard.image();
+    if (image.isNull())
+        return false;
+    m_document->newFromImage(image);
+    return true;
 }
 
 void CanvasItem::selectionUpdated()
@@ -472,7 +556,13 @@ void CanvasItem::commitSelection()
 
 ToolContext CanvasItem::toolContext() const
 {
-    return ToolContext{m_foregroundColor, static_cast<qreal>(m_brushSize)};
+    ToolContext ctx;
+    ctx.color = m_foregroundColor;
+    ctx.size = m_brushSize;
+    ctx.fillColor = m_backgroundColor;
+    // ShapeFillMode mirrors ShapeFill value-for-value.
+    ctx.shapeFill = static_cast<ShapeFill>(m_shapeFillMode);
+    return ctx;
 }
 
 QPointF CanvasItem::snappedOrigin() const

@@ -14,7 +14,7 @@ protected:
     }
 
     void drawShape(QPainter &painter, const QPointF &anchor,
-                   const QPointF &pos) const override
+                   const QPointF &pos, const ToolContext &) const override
     {
         if (anchor == pos)
             painter.drawPoint(anchor);

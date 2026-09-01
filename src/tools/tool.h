@@ -8,11 +8,20 @@
 #include <QRect>
 #include <QString>
 
+// How rectangle/ellipse interiors are painted.
+enum class ShapeFill {
+    Outline, // foreground outline only
+    Filled,  // foreground outline, background-color interior
+    Solid,   // foreground throughout
+};
+
 // Settings the canvas passes to the active tool for each stroke.
 struct ToolContext
 {
     QColor color = Qt::black;
     qreal size = 1;
+    QColor fillColor = Qt::white;
+    ShapeFill shapeFill = ShapeFill::Outline;
 };
 
 // A tool paints directly into the document image while the pointer is down
@@ -64,8 +73,13 @@ public:
 
 protected:
     virtual void drawShape(QPainter &painter, const QPointF &anchor,
-                           const QPointF &pos) const = 0;
+                           const QPointF &pos, const ToolContext &ctx) const = 0;
     virtual QPen pen(const ToolContext &ctx) const;
+    // Extra damage beyond the pen width (e.g. an arrowhead).
+    virtual qreal extraDamageMargin(const ToolContext &) const { return 0; }
+
+    // Applies the ctx fill mode to the painter's brush (for closed shapes).
+    static void applyShapeFill(QPainter &painter, const ToolContext &ctx);
 
 private:
     QRect paintPreview(QImage &image, const QPointF &pos, const ToolContext &ctx);

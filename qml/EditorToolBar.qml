@@ -14,6 +14,7 @@ ToolBar {
     signal saveRequested()
     signal saveAsRequested()
     signal resizeRequested(string mode)
+    signal fontRequested()
 
     RowLayout {
         anchors.fill: parent
@@ -73,6 +74,19 @@ ToolBar {
             to: 64
             value: root.canvas.brushSize
             onValueModified: root.canvas.brushSize = value
+        }
+
+        ComboBox {
+            model: [qsTr("Outline"), qsTr("Filled"), qsTr("Solid")]
+            currentIndex: root.canvas.shapeFillMode
+            onActivated: (index) => root.canvas.shapeFillMode = index
+            Layout.preferredWidth: 100
+        }
+
+        ToolButton {
+            text: qsTr("Font")
+            visible: root.canvas.tool === CanvasItem.Text
+            onClicked: root.fontRequested()
         }
 
         ToolSeparator {}

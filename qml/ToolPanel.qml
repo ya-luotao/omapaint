@@ -22,9 +22,12 @@ Frame {
                 { label: qsTr("Brush"),      tool: CanvasItem.Brush },
                 { label: qsTr("Eraser"),     tool: CanvasItem.Eraser },
                 { label: qsTr("Line"),       tool: CanvasItem.Line },
+                { label: qsTr("Arrow"),      tool: CanvasItem.Arrow },
                 { label: qsTr("Rectangle"),  tool: CanvasItem.Rectangle },
                 { label: qsTr("Ellipse"),    tool: CanvasItem.Ellipse },
                 { label: qsTr("Fill"),       tool: CanvasItem.Fill },
+                { label: qsTr("Text"),       tool: CanvasItem.Text },
+                { label: qsTr("Pixelate"),   tool: CanvasItem.Pixelate },
                 { label: qsTr("Eyedropper"), tool: CanvasItem.Eyedropper },
             ]
 
