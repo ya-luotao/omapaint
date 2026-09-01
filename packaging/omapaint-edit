@@ -1,12 +1,43 @@
 #!/bin/bash
-# Omarchy screenshot-editor hook. Opt in with:
-#   export OMARCHY_SCREENSHOT_EDITOR=omapaint-edit
+# Omarchy screenshot-editor hook. Make OmaPaint the default annotation
+# editor with:
+#   omapaint-edit --install
 #
 # The screenshot pipeline hands us a single image path. OmaPaint's annotate
 # mode saves in place and exits 0 on Done (Ctrl+Enter), non-zero when the
 # edit is discarded; the clipboard copy runs outside the app because Wayland
 # drops a client's clipboard when it exits (wl-copy forks and keeps serving).
 set -euo pipefail
+
+# uwsm sources uwsm/env.d/* from the XDG config hierarchy at session start
+# (Omarchy's own defaults live in /usr/share/uwsm/env.d/10-omarchy).
+ENV_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/uwsm/env.d/20-omapaint"
+
+case "${1:-}" in
+--install)
+  mkdir -p "$(dirname "$ENV_FILE")"
+  printf '%s\n' \
+    "# Written by 'omapaint-edit --install'. Remove with 'omapaint-edit --uninstall'." \
+    'export OMARCHY_SCREENSHOT_EDITOR=omapaint-edit' >"$ENV_FILE"
+  echo "OmaPaint is now your Omarchy screenshot annotation editor."
+  echo "  wrote $ENV_FILE"
+  echo "Takes effect at your next login. To use it right now, per shot:"
+  echo "  omarchy screenshot --editor=omapaint-edit"
+  exit 0
+  ;;
+--uninstall)
+  rm -f "$ENV_FILE"
+  echo "Removed $ENV_FILE."
+  echo "Omarchy's default screenshot editor is back at your next login."
+  exit 0
+  ;;
+"" | -h | --help)
+  echo "usage: omapaint-edit <image>      annotate an image, save in place, copy to clipboard"
+  echo "       omapaint-edit --install    make OmaPaint the Omarchy screenshot editor"
+  echo "       omapaint-edit --uninstall  restore the Omarchy default"
+  exit 2
+  ;;
+esac
 
 omapaint --annotate "$1"
 wl-copy -t image/png < "$1"

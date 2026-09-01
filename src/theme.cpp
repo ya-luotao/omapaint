@@ -2,13 +2,17 @@
 
 #include <QDir>
 #include <QFile>
+#include <QFileInfo>
 #include <QGuiApplication>
 #include <QRegularExpression>
 
-Theme::Theme(QObject *parent)
+Theme::Theme(QObject *parent, const QString &colorsPath)
     : QObject(parent)
-    , m_colorsPath(QDir::homePath()
-                   + QStringLiteral("/.local/state/omarchy/current/theme/colors.toml"))
+    , m_colorsPath(colorsPath.isEmpty()
+                       ? QDir::homePath()
+                           + QStringLiteral(
+                               "/.local/state/omarchy/current/theme/colors.toml")
+                       : colorsPath)
     , m_systemPalette(QGuiApplication::palette())
 {
     // Theme switches rebuild the staged theme directory, which unhooks
@@ -44,10 +48,10 @@ void Theme::rewatch()
     if (!watched.isEmpty())
         m_watcher.removePaths(watched);
 
-    const QString current =
-        QDir::homePath() + QStringLiteral("/.local/state/omarchy/current");
-    for (const QString &path :
-         {current, current + QStringLiteral("/theme"), m_colorsPath}) {
+    QDir themeDir = QFileInfo(m_colorsPath).dir();
+    const QString theme = themeDir.path();
+    themeDir.cdUp();
+    for (const QString &path : {themeDir.path(), theme, m_colorsPath}) {
         if (QFile::exists(path))
             m_watcher.addPath(path);
     }
@@ -85,29 +89,32 @@ void Theme::applyPalette()
         return;
     }
 
-    const auto color = [this](const char *key, const char *fallback) {
-        return m_colors.value(QLatin1String(key),
-                              m_colors.value(QLatin1String(fallback)));
+    // Every fallback chain must bottom out at background/foreground — those
+    // are the only keys parseColors() guarantees, and an invalid QColor in
+    // the palette is exactly the half-applied theme we refuse to ship.
+    const auto color = [this](const char *key, const QColor &fallback) {
+        return m_colors.value(QLatin1String(key), fallback);
     };
 
-    const QColor background = color("background", "background");
-    const QColor foreground = color("foreground", "foreground");
+    const QColor background = m_colors.value(QStringLiteral("background"));
+    const QColor foreground = m_colors.value(QStringLiteral("foreground"));
 
     QPalette palette;
     palette.setColor(QPalette::Window, background);
     palette.setColor(QPalette::WindowText, foreground);
-    palette.setColor(QPalette::Base, color("dark_background", "background"));
+    palette.setColor(QPalette::Base, color("dark_background", background));
     palette.setColor(QPalette::Text, foreground);
-    palette.setColor(QPalette::Button, color("lighter_background", "background"));
+    palette.setColor(QPalette::Button, color("lighter_background", background));
     palette.setColor(QPalette::ButtonText, foreground);
-    palette.setColor(QPalette::Highlight, color("selection", "accent"));
+    palette.setColor(QPalette::Highlight,
+                     color("selection", color("accent", foreground)));
     palette.setColor(QPalette::HighlightedText,
-                     color("bright_foreground", "foreground"));
-    palette.setColor(QPalette::Mid, color("muted", "foreground"));
-    palette.setColor(QPalette::Dark, color("darker_background", "background"));
-    palette.setColor(QPalette::ToolTipBase, color("dark_background", "background"));
+                     color("bright_foreground", foreground));
+    palette.setColor(QPalette::Mid, color("muted", foreground));
+    palette.setColor(QPalette::Dark, color("darker_background", background));
+    palette.setColor(QPalette::ToolTipBase, color("dark_background", background));
     palette.setColor(QPalette::ToolTipText, foreground);
-    palette.setColor(QPalette::PlaceholderText, color("muted", "foreground"));
+    palette.setColor(QPalette::PlaceholderText, color("muted", foreground));
 
     QColor disabled = foreground;
     disabled.setAlpha(110);

@@ -16,7 +16,9 @@ class Theme : public QObject
     Q_OBJECT
 
 public:
-    explicit Theme(QObject *parent = nullptr);
+    // colorsPath overrides the Omarchy staged-theme location (tests).
+    explicit Theme(QObject *parent = nullptr,
+                   const QString &colorsPath = QString());
 
     bool available() const { return m_available; }
 

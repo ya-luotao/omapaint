@@ -6,7 +6,8 @@
 
 *The brand image above was drawn by OmaPaint's own brush, ellipse, and text
 tools, in the current Omarchy theme's colors — regenerate it with
-`./devtools/readme-preview.sh`.*
+`./devtools/readme-preview.sh`. The red paint dot is named Ruby, after a
+chubby white cat with a ruby-red harness. She appears in the demo.*
 
 OmaPaint is a small, native image editor for [Omarchy](https://omarchy.org).
 It aims to fill the role classic Paint once filled on Windows: open an image,
@@ -43,11 +44,26 @@ cd omapaint/packaging/arch && makepkg -si
 To make OmaPaint your screenshot annotation editor:
 
 ```bash
-export OMARCHY_SCREENSHOT_EDITOR=omapaint-edit
+omapaint-edit --install    # undo with: omapaint-edit --uninstall
 ```
 
-In annotate mode, **Done** (Ctrl+Enter) saves in place and the result lands
-on your clipboard.
+This writes `~/.config/uwsm/env.d/20-omapaint` (setting
+`OMARCHY_SCREENSHOT_EDITOR=omapaint-edit`) and takes effect at your next
+login; until then, `omarchy screenshot --editor=omapaint-edit` uses it for
+a single shot. In annotate mode, **Done**
+(Ctrl+Enter) saves in place and the result lands on your clipboard.
+
+For quick paint sessions, a Hyprland binding pairs well with the clipboard
+flow — `SUPER + ALT + P` is unused by Omarchy's defaults:
+
+```lua
+-- ~/.config/hypr/bindings.lua
+o.bind("SUPER + ALT + P", "Paint clipboard image", "omapaint --clipboard")
+```
+
+`omapaint --clipboard` opens whatever image is on the clipboard (a blank
+canvas plus a notice when there is none); `wl-paste | omapaint -` does the
+same via stdin.
 
 ## Building
 
