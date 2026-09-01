@@ -70,6 +70,21 @@ ctest --test-dir build        # run the tests
 - Optional screenshot annotation via Omarchy's `$OMARCHY_SCREENSHOT_EDITOR` hook.
 - Omarchy theme integration, with graceful fallback outside Omarchy.
 
+## Theme wallpapers
+
+A wallpaper for every Omarchy theme — each one painted by OmaPaint's own
+rectangle and fill tools, in that theme's colors:
+
+![One wallpaper per Omarchy theme, painted by OmaPaint](assets/wallpaper-gallery.png)
+
+Paint one for *your* current theme, sized to your monitor:
+
+```bash
+devtools/wallpaper.sh
+```
+
+*Regenerate the gallery above with `./devtools/wallpaper-gallery.sh`.*
+
 ## Contributing
 
 The project is meant to be small enough to understand and easy to contribute

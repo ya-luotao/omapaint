@@ -93,6 +93,10 @@ grim -g "$geom" /tmp/shot.png
 - `draw_logo` — paints the README preview image with OmaPaint's own tools.
 - `draw_icons` — regenerates the committed tool icons + app logo
   (`assets/`); icons are black ink, tinted to the theme at runtime.
+- `draw_wallpaper` + `devtools/wallpaper.sh` — paints an Omarchy wallpaper
+  in any theme's colors with OmaPaint's tools (community fun, monitor-sized);
+  `devtools/wallpaper-gallery.sh` regenerates `assets/wallpaper-gallery.png`
+  (one tile per installed theme) for the README.
 - `devtools/readme-preview.sh` — regenerates `assets/readme-preview.png`
   (draws logo in current theme colors, opens app, floats, screenshots).
 - `omapaint --demo` + `devtools/record-demo.sh` — scripted self-driving demo

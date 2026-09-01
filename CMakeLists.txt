@@ -85,6 +85,16 @@ qt_add_executable(draw_logo
 target_include_directories(draw_logo PRIVATE src)
 target_link_libraries(draw_logo PRIVATE Qt6::Gui)
 
+# Dev-only helper that paints an Omarchy wallpaper in a theme's colors with
+# OmaPaint's tools (community fun; see devtools/wallpaper.sh).
+qt_add_executable(draw_wallpaper
+    devtools/draw_wallpaper.cpp
+    src/tools/tool.cpp
+    src/tools/fill_tool.cpp
+)
+target_include_directories(draw_wallpaper PRIVATE src)
+target_link_libraries(draw_wallpaper PRIVATE Qt6::Gui)
+
 # Dev-only helper that paints the committed tool icons and app logo with
 # OmaPaint's tools (dogfood; see assets/icons/).
 qt_add_executable(draw_icons
