@@ -1,3 +1,5 @@
+#include "canvas_item.h"
+#include "demo_driver.h"
 #include "theme.h"
 
 #include <QCommandLineParser>
@@ -59,6 +61,11 @@ int main(int argc, char *argv[])
                        "exits (used by omapaint-edit)."),
         QStringLiteral("file"));
     parser.addOption(annotateOption);
+    QCommandLineOption demoOption(
+        QStringLiteral("demo"),
+        QStringLiteral("Run the scripted self-driving demo (promo recording)."));
+    demoOption.setFlags(QCommandLineOption::HiddenFromHelp);
+    parser.addOption(demoOption);
     parser.process(app);
 
     const QSize canvasSize =
@@ -104,6 +111,17 @@ int main(int argc, char *argv[])
     engine.loadFromModule("OmaPaint", "Main");
     if (engine.rootObjects().isEmpty())
         return 1;
+
+    if (parser.isSet(demoOption)) {
+        auto *window = qobject_cast<QQuickWindow *>(engine.rootObjects().first());
+        auto *canvas = window ? window->findChild<CanvasItem *>() : nullptr;
+        if (window && canvas) {
+            auto *driver = new DemoDriver(window, canvas, window);
+            QObject::connect(driver, &DemoDriver::finished, &app,
+                             &QCoreApplication::quit);
+            driver->start();
+        }
+    }
 
     return app.exec();
 }

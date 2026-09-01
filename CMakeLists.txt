@@ -26,6 +26,7 @@ qt_add_executable(omapaint
     src/commands/draw_command.cpp src/commands/draw_command.h
     src/commands/image_command.cpp src/commands/image_command.h
     src/theme.cpp src/theme.h
+    src/demo_driver.cpp src/demo_driver.h
 )
 
 target_compile_definitions(omapaint PRIVATE OMAPAINT_VERSION="${PROJECT_VERSION}")
