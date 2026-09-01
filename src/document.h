@@ -49,6 +49,9 @@ public:
     // Whole-image edits; each pushes one full-snapshot ImageCommand.
     Q_INVOKABLE void resizeImage(int width, int height);
     Q_INVOKABLE void resizeCanvas(int width, int height);
+    // degrees must be 90, -90, or 180.
+    Q_INVOKABLE void rotateImage(int degrees);
+    Q_INVOKABLE void flipImage(bool horizontal);
     void cropTo(const QRect &rect);
 
     bool loadFile(const QString &path);

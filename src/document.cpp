@@ -5,6 +5,7 @@
 
 #include <QFileInfo>
 #include <QPainter>
+#include <QTransform>
 
 Document::Document(QObject *parent)
     : QObject(parent)
@@ -144,6 +145,29 @@ void Document::resizeCanvas(int width, int height)
 
     m_undoStack.push(new ImageCommand(this, m_image, after,
                                       QStringLiteral("Resize canvas")));
+}
+
+void Document::rotateImage(int degrees)
+{
+    if (degrees != 90 && degrees != -90 && degrees != 180)
+        return;
+    // A double flip is an exact 180 and cheaper than transformed().
+    const QImage after =
+        (degrees == 180
+             ? m_image.flipped(Qt::Horizontal | Qt::Vertical)
+             : m_image.transformed(QTransform().rotate(degrees)))
+            .convertToFormat(QImage::Format_ARGB32_Premultiplied);
+    m_undoStack.push(new ImageCommand(this, m_image, after,
+                                      QStringLiteral("Rotate")));
+}
+
+void Document::flipImage(bool horizontal)
+{
+    const QImage after =
+        m_image.flipped(horizontal ? Qt::Horizontal : Qt::Vertical)
+            .convertToFormat(QImage::Format_ARGB32_Premultiplied);
+    m_undoStack.push(new ImageCommand(this, m_image, after,
+                                      QStringLiteral("Flip")));
 }
 
 void Document::cropTo(const QRect &rect)

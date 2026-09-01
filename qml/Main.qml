@@ -72,6 +72,24 @@ ApplicationWindow {
         confirmDiscard(() => openDialog.open())
     }
 
+    function requestRotate(degrees) {
+        commitPendingEdits()
+        doc.rotateImage(degrees)
+    }
+
+    function requestFlip(horizontal) {
+        commitPendingEdits()
+        doc.flipImage(horizontal)
+    }
+
+    function requestOpenUrl(url) {
+        commitPendingEdits()
+        confirmDiscard(() => {
+            if (!doc.load(url))
+                errorDialog.show(qsTr("Could not open: %1").arg(doc.lastError))
+        })
+    }
+
     function requestSave() {
         commitPendingEdits()
         if (doc.filePath.length > 0) {
@@ -115,6 +133,8 @@ ApplicationWindow {
         onSaveRequested: window.requestSave()
         onSaveAsRequested: { window.commitPendingEdits(); saveDialog.open() }
         onResizeRequested: (mode) => resizeDialog.openFor(mode)
+        onRotateRequested: (degrees) => window.requestRotate(degrees)
+        onFlipRequested: (horizontal) => window.requestFlip(horizontal)
         onFontRequested: fontDialog.open()
     }
 
@@ -231,6 +251,20 @@ ApplicationWindow {
                     textOverlay.commit()
                 }
             }
+        }
+    }
+
+    DropArea {
+        anchors.fill: parent
+        keys: ["text/uri-list"]
+        onDropped: (drop) => {
+            if (drop.urls.length === 0)
+                return
+            drop.acceptProposedAction()
+            // confirmDiscard defers the action past the drop event, so take
+            // a copy of the url now.
+            const url = drop.urls[0]
+            window.requestOpenUrl(url)
         }
     }
 
@@ -371,4 +405,6 @@ ApplicationWindow {
         onActivated: window.requestDone()
     }
     Shortcut { sequence: "G"; enabled: !window.typing; onActivated: canvas.pixelGrid = !canvas.pixelGrid }
+    Shortcut { sequence: "Ctrl+R"; onActivated: window.requestRotate(90) }
+    Shortcut { sequence: "Ctrl+Shift+R"; onActivated: window.requestRotate(-90) }
 }

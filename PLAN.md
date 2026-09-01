@@ -611,7 +611,7 @@ omapaint --annotate image.png   # open, save-in-place + copy on done
                                 # (used by the omapaint-edit wrapper)
 ```
 
-Piping an image into the application may be explored later:
+Piping an image into the application is supported (v0.2.0):
 
 ```bash
 wl-paste | omapaint -
@@ -738,6 +738,26 @@ Success criterion:
 > OmaPaint is ready to be recommended as a normal Omarchy utility — and users
 > who prefer it can make it their screenshot editor with one environment
 > variable.
+
+---
+
+## v0.2.0 — Everyday Edges
+
+Small quality-of-life features that classic Paint users reach for, plus the
+input paths a Wayland desktop expects. No new abstractions.
+
+Features:
+
+- Rotate 90° right / 90° left / 180°.
+- Flip horizontal / vertical.
+- EXIF orientation applied on load (photos arrive the right way up).
+- Drag-and-drop a file onto the window to open it.
+- `omapaint -` reads an image from stdin (`wl-paste | omapaint -`).
+
+Success criterion:
+
+> Sideways phone photos, "just flip it", and pipe-style workflows all work
+> without leaving OmaPaint.
 
 ---
 
@@ -898,13 +918,9 @@ These ideas are intentionally outside the first milestone sequence but may be ex
 - Tablet/stylus pressure.
 - Better touch support.
 - Configurable palettes.
-- Image rotation and flipping.
-- Basic EXIF orientation handling.
-- Drag-and-drop.
 - Optional autosave/recovery.
 - Small pixel-art conveniences.
 - Portal-based desktop integration.
-- `wl-paste | omapaint -` stdin support.
 
 None of these should delay the core editor.
 

@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.21)
-project(omapaint VERSION 0.1.0 LANGUAGES CXX)
+project(omapaint VERSION 0.2.0 LANGUAGES CXX)
 
-find_package(Qt6 6.5 REQUIRED COMPONENTS Gui Qml Quick QuickControls2)
-qt_standard_project_setup(REQUIRES 6.5)
+find_package(Qt6 6.9 REQUIRED COMPONENTS Gui Qml Quick QuickControls2)
+qt_standard_project_setup(REQUIRES 6.9)
 
 qt_add_executable(omapaint
     src/main.cpp

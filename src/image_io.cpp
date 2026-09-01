@@ -1,5 +1,6 @@
 #include "image_io.h"
 
+#include <QBuffer>
 #include <QFileInfo>
 #include <QImageReader>
 #include <QImageWriter>
@@ -7,9 +8,13 @@
 
 namespace ImageIo {
 
-bool load(const QString &path, QImage *out, QString *error)
+namespace {
+
+// Shared by the file and in-memory paths so both honor EXIF orientation and
+// normalize to the application-wide pixel format.
+bool read(QImageReader &reader, QImage *out, QString *error)
 {
-    QImageReader reader(path);
+    reader.setAutoTransform(true);
     QImage image = reader.read();
     if (image.isNull()) {
         if (error)
@@ -18,6 +23,23 @@ bool load(const QString &path, QImage *out, QString *error)
     }
     *out = image.convertToFormat(QImage::Format_ARGB32_Premultiplied);
     return true;
+}
+
+} // namespace
+
+bool load(const QString &path, QImage *out, QString *error)
+{
+    QImageReader reader(path);
+    return read(reader, out, error);
+}
+
+bool loadData(const QByteArray &data, QImage *out, QString *error)
+{
+    QBuffer buffer;
+    buffer.setData(data);
+    buffer.open(QIODevice::ReadOnly);
+    QImageReader reader(&buffer);
+    return read(reader, out, error);
 }
 
 bool save(const QString &path, const QImage &image, QString *error)

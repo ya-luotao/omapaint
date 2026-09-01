@@ -18,7 +18,11 @@ Just a fast, obvious utility that shares Omarchy's theme and technology stack
 
 ## Status
 
-**v0.1.0 — Omarchy Native.** OmaPaint now feels like part of the desktop:
+**v0.2.0 — Everyday Edges.** Rotate and flip (with undo, like everything
+else), EXIF orientation respected on load, drag-and-drop a file onto the
+window, and stdin piping: `wl-paste | omapaint -`.
+
+**v0.1.0 — Omarchy Native** made OmaPaint feel like part of the desktop:
 it follows the active Omarchy theme's `colors.toml` live (falling back to the
 system palette elsewhere), ships a `.desktop` entry with PNG/JPEG/WebP MIME
 associations, an Arch `PKGBUILD`, and an `omapaint-edit` hook for Omarchy's
@@ -55,6 +59,7 @@ cmake --build build
 ./build/omapaint              # blank canvas
 ./build/omapaint image.png    # edit an image
 ./build/omapaint --new 800x600
+wl-paste | ./build/omapaint - # edit the clipboard via stdin
 ctest --test-dir build        # run the tests
 ```
 

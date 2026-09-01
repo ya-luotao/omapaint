@@ -16,6 +16,8 @@ ToolBar {
     signal saveRequested()
     signal saveAsRequested()
     signal resizeRequested(string mode)
+    signal rotateRequested(int degrees)
+    signal flipRequested(bool horizontal)
     signal fontRequested()
 
     RowLayout {
@@ -76,6 +78,21 @@ ToolBar {
         ToolButton {
             text: qsTr("Canvas")
             onClicked: root.resizeRequested("canvas")
+        }
+        ToolButton {
+            text: qsTr("Rotate")
+            onClicked: rotateMenu.open()
+
+            Menu {
+                id: rotateMenu
+                y: parent.height
+                MenuItem { text: qsTr("Rotate 90\u00b0 right (Ctrl+R)"); onTriggered: root.rotateRequested(90) }
+                MenuItem { text: qsTr("Rotate 90\u00b0 left (Ctrl+Shift+R)"); onTriggered: root.rotateRequested(-90) }
+                MenuItem { text: qsTr("Rotate 180\u00b0"); onTriggered: root.rotateRequested(180) }
+                MenuSeparator {}
+                MenuItem { text: qsTr("Flip horizontal"); onTriggered: root.flipRequested(true) }
+                MenuItem { text: qsTr("Flip vertical"); onTriggered: root.flipRequested(false) }
+            }
         }
 
         ToolSeparator {}

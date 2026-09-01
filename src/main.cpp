@@ -1,14 +1,20 @@
 #include "canvas_item.h"
 #include "demo_driver.h"
+#include "document.h"
+#include "image_io.h"
 #include "theme.h"
 
 #include <QCommandLineParser>
 #include <QElapsedTimer>
+#include <QFile>
 #include <QGuiApplication>
 #include <QIcon>
 #include <QQmlApplicationEngine>
 #include <QQuickWindow>
 #include <QRegularExpression>
+
+#include <cstdio>
+#include <unistd.h>
 
 namespace {
 
@@ -45,7 +51,8 @@ int main(int argc, char *argv[])
     parser.addHelpOption();
     parser.addVersionOption();
     parser.addPositionalArgument(QStringLiteral("file"),
-                                 QStringLiteral("Image file to open."));
+                                 QStringLiteral("Image file to open, or - to "
+                                                "read an image from stdin."));
     const QCommandLineOption newOption(
         QStringLiteral("new"),
         QStringLiteral("Start with a blank canvas of the given size."),
@@ -71,10 +78,30 @@ int main(int argc, char *argv[])
     const QSize canvasSize =
         parseCanvasSize(parser.value(newOption), QSize(1280, 720));
     QUrl startupFile;
-    if (parser.isSet(annotateOption))
+    QImage stdinImage;
+    if (parser.isSet(annotateOption)) {
         startupFile = QUrl::fromLocalFile(parser.value(annotateOption));
-    else if (!parser.positionalArguments().isEmpty())
-        startupFile = QUrl::fromLocalFile(parser.positionalArguments().first());
+    } else if (!parser.positionalArguments().isEmpty()) {
+        const QString arg = parser.positionalArguments().first();
+        if (arg == QStringLiteral("-")) {
+            // wl-paste | omapaint -
+            if (isatty(fileno(stdin))) {
+                fprintf(stderr, "omapaint: '-' expects image data on stdin "
+                                "(e.g. wl-paste | omapaint -)\n");
+                return 1;
+            }
+            QFile in;
+            QString error;
+            if (!in.open(stdin, QIODevice::ReadOnly)
+                || !ImageIo::loadData(in.readAll(), &stdinImage, &error)) {
+                fprintf(stderr, "omapaint: stdin is not a supported image: %s\n",
+                        qPrintable(error));
+                return 1;
+            }
+        } else {
+            startupFile = QUrl::fromLocalFile(arg);
+        }
+    }
 
     QQmlApplicationEngine engine;
     engine.setInitialProperties({
@@ -111,6 +138,15 @@ int main(int argc, char *argv[])
     engine.loadFromModule("OmaPaint", "Main");
     if (engine.rootObjects().isEmpty())
         return 1;
+
+    if (!stdinImage.isNull()) {
+        auto *window = qobject_cast<QQuickWindow *>(engine.rootObjects().first());
+        if (auto *doc = window ? window->findChild<Document *>() : nullptr) {
+            doc->newFromImage(stdinImage);
+            qInfo("omapaint: opened %dx%d image from stdin",
+                  doc->imageSize().width(), doc->imageSize().height());
+        }
+    }
 
     if (parser.isSet(demoOption)) {
         auto *window = qobject_cast<QQuickWindow *>(engine.rootObjects().first());

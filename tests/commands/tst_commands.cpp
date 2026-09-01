@@ -12,6 +12,9 @@ private slots:
     void cropUndoRedo();
     void resizeImageScalesAndRestores();
     void resizeCanvasAnchorsTopLeftWithWhite();
+    void rotateSwapsDimensionsAndRestores();
+    void rotate180IsExact();
+    void flipMirrorsAndRestores();
     void sizeOpsMarkDirty();
 };
 
@@ -76,12 +79,93 @@ void TestCommands::resizeCanvasAnchorsTopLeftWithWhite()
     QCOMPARE(doc.image().pixelColor(5, 5), QColor(Qt::blue));
 }
 
+void TestCommands::rotateSwapsDimensionsAndRestores()
+{
+    Document doc;
+    doc.newDocument(40, 20);
+    doc.image().setPixelColor(0, 0, Qt::red); // top-left marker
+    const QImage original = doc.image();
+
+    doc.rotateImage(90);
+    QCOMPARE(doc.imageSize(), QSize(20, 40));
+    QCOMPARE(doc.image().format(), QImage::Format_ARGB32_Premultiplied);
+    // 90 CW moves the top-left corner to the top-right.
+    QCOMPARE(doc.image().pixelColor(19, 0), QColor(Qt::red));
+
+    doc.undo();
+    QCOMPARE(doc.image(), original);
+    doc.redo();
+    QCOMPARE(doc.imageSize(), QSize(20, 40));
+    QCOMPARE(doc.image().pixelColor(19, 0), QColor(Qt::red));
+
+    doc.undo();
+    doc.rotateImage(-90);
+    QCOMPARE(doc.imageSize(), QSize(20, 40));
+    // 90 CCW moves the top-left corner to the bottom-left.
+    QCOMPARE(doc.image().pixelColor(0, 39), QColor(Qt::red));
+    doc.undo();
+    QCOMPARE(doc.image(), original);
+
+    // Invalid angles are rejected without touching history.
+    const int commands = doc.undoStack()->count();
+    doc.rotateImage(45);
+    QCOMPARE(doc.undoStack()->count(), commands);
+    QCOMPARE(doc.image(), original);
+}
+
+void TestCommands::rotate180IsExact()
+{
+    Document doc;
+    doc.newDocument(30, 20);
+    doc.image().setPixelColor(1, 2, Qt::green);
+    const QImage original = doc.image();
+
+    doc.rotateImage(180);
+    QCOMPARE(doc.imageSize(), QSize(30, 20));
+    QCOMPARE(doc.image().pixelColor(28, 17), QColor(Qt::green));
+
+    doc.undo();
+    QCOMPARE(doc.image(), original);
+    doc.redo();
+    doc.rotateImage(180);
+    QCOMPARE(doc.image(), original); // two 180s round-trip exactly
+}
+
+void TestCommands::flipMirrorsAndRestores()
+{
+    Document doc;
+    doc.newDocument(20, 10);
+    doc.image().setPixelColor(2, 3, Qt::blue);
+    const QImage original = doc.image();
+
+    doc.flipImage(true);
+    QCOMPARE(doc.imageSize(), QSize(20, 10));
+    QCOMPARE(doc.image().pixelColor(17, 3), QColor(Qt::blue));
+    doc.undo();
+    QCOMPARE(doc.image(), original);
+
+    doc.flipImage(false);
+    QCOMPARE(doc.image().pixelColor(2, 6), QColor(Qt::blue));
+    doc.undo();
+    QCOMPARE(doc.image(), original);
+    doc.redo();
+    QCOMPARE(doc.image().pixelColor(2, 6), QColor(Qt::blue));
+}
+
 void TestCommands::sizeOpsMarkDirty()
 {
     Document doc;
     doc.newDocument(20, 20);
     QVERIFY(!doc.isDirty());
     doc.resizeCanvas(25, 25);
+    QVERIFY(doc.isDirty());
+    doc.undo();
+    QVERIFY(!doc.isDirty());
+    doc.rotateImage(90);
+    QVERIFY(doc.isDirty());
+    doc.undo();
+    QVERIFY(!doc.isDirty());
+    doc.flipImage(true);
     QVERIFY(doc.isDirty());
     doc.undo();
     QVERIFY(!doc.isDirty());
