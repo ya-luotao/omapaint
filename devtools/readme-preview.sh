@@ -30,7 +30,7 @@ cmake --build "$BUILD_DIR" --target draw_logo omapaint
 
 "$BUILD_DIR/omapaint" "$TMP_PNG" &
 APP_PID=$!
-trap 'kill $APP_PID 2>/dev/null; rm -f "$TMP_PNG"' EXIT
+trap 'kill $APP_PID 2>/dev/null || true; rm -f "$TMP_PNG"' EXIT
 sleep 1.5
 
 # Float and size the window so the whole canvas is visible (Omarchy's
