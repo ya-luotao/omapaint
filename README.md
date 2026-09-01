@@ -83,7 +83,7 @@ anything that only reads help text.
 
 ## Building
 
-Requires Qt 6.5+ (`qt6-base`, `qt6-declarative`), CMake, and a C++ compiler.
+Requires Qt 6.9+ (`qt6-base`, `qt6-declarative`), CMake, and a C++ compiler.
 
 ```bash
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
