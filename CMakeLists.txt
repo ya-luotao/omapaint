@@ -37,3 +37,12 @@ target_link_libraries(omapaint PRIVATE Qt6::Gui Qt6::Qml Qt6::Quick Qt6::QuickCo
 
 enable_testing()
 add_subdirectory(tests)
+
+# Dev-only helper that paints the README preview image with OmaPaint's tools.
+qt_add_executable(draw_logo
+    devtools/draw_logo.cpp
+    src/tools/tool.cpp
+    src/tools/fill_tool.cpp
+)
+target_include_directories(draw_logo PRIVATE src)
+target_link_libraries(draw_logo PRIVATE Qt6::Gui)

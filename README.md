@@ -2,6 +2,12 @@
 
 > Paint. For Omarchy.
 
+![OmaPaint editing the Omarchy logo](assets/readme-preview.png)
+
+*The Omarchy logo above was drawn by OmaPaint's own rectangle and fill tools,
+in the current Omarchy theme's colors — regenerate it with
+`./devtools/readme-preview.sh`.*
+
 OmaPaint is a small, native image editor for [Omarchy](https://omarchy.org).
 It aims to fill the role classic Paint once filled on Windows: open an image,
 draw on it, crop it, add a label or arrow, copy it, save it, get out of the way.
