@@ -10,6 +10,7 @@ ApplicationWindow {
     property url startupFile
     property size startupSize: Qt.size(1280, 720)
     property bool startupClipboard: false
+    property bool annotateMode: false
     property bool clipboardLoaded: false
     property var pendingAction: null
     // Single-letter shortcuts must stand down while any text field is live.
@@ -81,16 +82,34 @@ ApplicationWindow {
         }
     }
 
+    // Annotate mode: save in place and exit 0 so omapaint-edit copies the
+    // result to the clipboard.
+    function requestDone() {
+        commitPendingEdits()
+        if (doc.filePath.length === 0) {
+            saveDialog.open()
+            return
+        }
+        if (doc.save())
+            Qt.exit(0)
+        else
+            errorDialog.show(qsTr("Could not save: %1").arg(doc.lastError))
+    }
+
     onClosing: (close) => {
         if (doc.dirty) {
             close.accepted = false
-            confirmDiscard(() => Qt.quit())
+            // Discarding in annotate mode exits non-zero so the wrapper does
+            // not copy a stale file to the clipboard.
+            confirmDiscard(() => annotateMode ? Qt.exit(1) : Qt.quit())
         }
     }
 
     header: EditorToolBar {
         doc: doc
         canvas: canvas
+        annotate: window.annotateMode
+        onDoneRequested: window.requestDone()
         onNewRequested: window.requestNew()
         onOpenRequested: window.requestOpen()
         onSaveRequested: window.requestSave()
@@ -346,5 +365,10 @@ ApplicationWindow {
     Shortcut { sequences: ["+", "="]; enabled: !window.typing; onActivated: canvas.zoomIn() }
     Shortcut { sequence: "-"; enabled: !window.typing; onActivated: canvas.zoomOut() }
     Shortcut { sequence: "Ctrl+0"; onActivated: canvas.resetZoom() }
+    Shortcut {
+        sequences: ["Ctrl+Return", "Ctrl+Enter"]
+        enabled: window.annotateMode
+        onActivated: window.requestDone()
+    }
     Shortcut { sequence: "G"; enabled: !window.typing; onActivated: canvas.pixelGrid = !canvas.pixelGrid }
 }

@@ -1,0 +1,12 @@
+#!/bin/bash
+# Omarchy screenshot-editor hook. Opt in with:
+#   export OMARCHY_SCREENSHOT_EDITOR=omapaint-edit
+#
+# The screenshot pipeline hands us a single image path. OmaPaint's annotate
+# mode saves in place and exits 0 on Done (Ctrl+Enter), non-zero when the
+# edit is discarded; the clipboard copy runs outside the app because Wayland
+# drops a client's clipboard when it exits (wl-copy forks and keeps serving).
+set -euo pipefail
+
+omapaint --annotate "$1"
+wl-copy -t image/png < "$1"

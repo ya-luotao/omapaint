@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=OmaPaint
+GenericName=Image Editor
+Comment=Paint. For Omarchy.
+Exec=omapaint %f
+Icon=omapaint
+Terminal=false
+Categories=Graphics;RasterGraphics;
+MimeType=image/png;image/jpeg;image/webp;
+Keywords=paint;draw;image;annotate;screenshot;

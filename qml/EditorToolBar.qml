@@ -8,7 +8,9 @@ ToolBar {
 
     required property Document doc
     required property CanvasItem canvas
+    property bool annotate: false
 
+    signal doneRequested()
     signal newRequested()
     signal openRequested()
     signal saveRequested()
@@ -19,6 +21,16 @@ ToolBar {
     RowLayout {
         anchors.fill: parent
         spacing: 4
+
+        ToolButton {
+            text: qsTr("Done")
+            visible: root.annotate
+            highlighted: true
+            onClicked: root.doneRequested()
+            ToolTip.visible: hovered
+            ToolTip.text: qsTr("Save in place and finish (Ctrl+Enter)")
+        }
+        ToolSeparator { visible: root.annotate }
 
         ToolButton {
             text: qsTr("New")

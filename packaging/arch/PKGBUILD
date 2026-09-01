@@ -1,0 +1,33 @@
+# Maintainer: Tao Luo
+pkgname=omapaint
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="Paint. For Omarchy."
+arch=(x86_64)
+url="https://github.com/ya-luotao/omapaint"
+license=(MIT)
+depends=(qt6-base qt6-declarative qt6-imageformats wl-clipboard hicolor-icon-theme)
+makedepends=(cmake ninja git)
+source=("git+$url.git")
+sha256sums=('SKIP')
+
+pkgver() {
+  cd "$pkgname"
+  git describe --tags --always 2>/dev/null | sed 's/^v//; s/-/./g'
+}
+
+build() {
+  cmake -S "$pkgname" -B build -G Ninja \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=/usr
+  cmake --build build
+}
+
+check() {
+  ctest --test-dir build --output-on-failure
+}
+
+package() {
+  DESTDIR="$pkgdir" cmake --install build
+  install -Dm644 "$pkgname/LICENSE" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}

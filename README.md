@@ -18,15 +18,32 @@ Just a fast, obvious utility that shares Omarchy's theme and technology stack
 
 ## Status
 
-**v0.0.4 — Annotate.** Everyday screenshot annotation works end to end: text
-(edit in place before committing, any font via the font dialog), arrows,
-outlined/filled/solid rectangles and ellipses with a foreground/background
-color pair, a pixelate tool for hiding sensitive detail, and
-`omapaint --clipboard` to open the image currently on the clipboard. On top
-of the earlier milestones: selection with floating move, cut/copy/paste,
-crop, image/canvas resize, PNG/JPEG/WebP, pencil/brush/eraser/shapes/fill,
+**v0.1.0 — Omarchy Native.** OmaPaint now feels like part of the desktop:
+it follows the active Omarchy theme's `colors.toml` live (falling back to the
+system palette elsewhere), ships a `.desktop` entry with PNG/JPEG/WebP MIME
+associations, an Arch `PKGBUILD`, and an `omapaint-edit` hook for Omarchy's
+screenshot pipeline. Every tool icon — and the app logo — was drawn with
+OmaPaint's own tools (`devtools/draw_icons`). The full editor underneath:
+text, arrows, filled shapes, pixelate, selection with floating move,
+cut/copy/paste, crop, resize, PNG/JPEG/WebP, pencil/brush/eraser/shapes/fill,
 zoom 25%–1600% with a pixel grid, and undo/redo across every tool. See
 [PLAN.md](PLAN.md) for the goals, architecture, and milestone roadmap.
+
+## Installing on Arch / Omarchy
+
+```bash
+git clone https://github.com/ya-luotao/omapaint
+cd omapaint/packaging/arch && makepkg -si
+```
+
+To make OmaPaint your screenshot annotation editor:
+
+```bash
+export OMARCHY_SCREENSHOT_EDITOR=omapaint-edit
+```
+
+In annotate mode, **Done** (Ctrl+Enter) saves in place and the result lands
+on your clipboard.
 
 ## Building
 

@@ -1,6 +1,9 @@
+#include "theme.h"
+
 #include <QCommandLineParser>
 #include <QElapsedTimer>
 #include <QGuiApplication>
+#include <QIcon>
 #include <QQmlApplicationEngine>
 #include <QQuickWindow>
 #include <QRegularExpression>
@@ -27,7 +30,13 @@ int main(int argc, char *argv[])
     QGuiApplication app(argc, argv);
     app.setApplicationName(QStringLiteral("omapaint"));
     app.setApplicationDisplayName(QStringLiteral("OmaPaint"));
-    app.setApplicationVersion(QStringLiteral("0.0.1"));
+    app.setApplicationVersion(QStringLiteral(OMAPAINT_VERSION));
+    app.setDesktopFileName(QStringLiteral("omapaint"));
+    app.setWindowIcon(QIcon(QStringLiteral(":/omapaint.png")));
+
+    // Follow the active Omarchy theme; leaves the system palette alone when
+    // no Omarchy theme is present.
+    Theme theme;
 
     QCommandLineParser parser;
     parser.setApplicationDescription(QStringLiteral("Paint. For Omarchy."));
@@ -44,12 +53,20 @@ int main(int argc, char *argv[])
         QStringLiteral("clipboard"),
         QStringLiteral("Open the image currently on the clipboard."));
     parser.addOption(clipboardOption);
+    const QCommandLineOption annotateOption(
+        QStringLiteral("annotate"),
+        QStringLiteral("Annotate mode: Done saves the file in place and "
+                       "exits (used by omapaint-edit)."),
+        QStringLiteral("file"));
+    parser.addOption(annotateOption);
     parser.process(app);
 
     const QSize canvasSize =
         parseCanvasSize(parser.value(newOption), QSize(1280, 720));
     QUrl startupFile;
-    if (!parser.positionalArguments().isEmpty())
+    if (parser.isSet(annotateOption))
+        startupFile = QUrl::fromLocalFile(parser.value(annotateOption));
+    else if (!parser.positionalArguments().isEmpty())
         startupFile = QUrl::fromLocalFile(parser.positionalArguments().first());
 
     QQmlApplicationEngine engine;
@@ -59,6 +76,7 @@ int main(int argc, char *argv[])
         // Wayland only exposes the clipboard to the focused window, so the
         // QML side defers the actual read until first activation.
         {QStringLiteral("startupClipboard"), parser.isSet(clipboardOption)},
+        {QStringLiteral("annotateMode"), parser.isSet(annotateOption)},
     });
 
     QObject::connect(
