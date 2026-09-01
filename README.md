@@ -1,0 +1,33 @@
+# OmaPaint
+
+> Paint. For Omarchy.
+
+OmaPaint is a small, native image editor for [Omarchy](https://omarchy.org).
+It aims to fill the role classic Paint once filled on Windows: open an image,
+draw on it, crop it, add a label or arrow, copy it, save it, get out of the way.
+
+It is not trying to be Krita or GIMP — no layers, no filters, no plugins.
+Just a fast, obvious utility that shares Omarchy's theme and technology stack
+(Qt 6 / QML, like Omarchy's Quickshell).
+
+## Status
+
+**Planning.** Nothing to run yet — see [PLAN.md](PLAN.md) for the goals,
+architecture, and milestone roadmap.
+
+## Planned highlights
+
+- Blank-canvas drawing and quick edits of existing images (PNG, JPEG, WebP).
+- Classic Paint toolset: pencil, brush, shapes, fill, selection, text, arrow, crop.
+- Optional screenshot annotation via Omarchy's `$OMARCHY_SCREENSHOT_EDITOR` hook.
+- Omarchy theme integration, with graceful fallback outside Omarchy.
+
+## Contributing
+
+The project is meant to be small enough to understand and easy to contribute
+to. Until code lands, the best contribution is feedback on
+[PLAN.md](PLAN.md) — open an issue.
+
+## License
+
+[MIT](LICENSE)
