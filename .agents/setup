@@ -1,0 +1,136 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+step_started=$SECONDS
+echo ":: Checking system packages"
+
+packages=(
+  build-essential
+  cmake
+  fonts-dejavu-core
+  libdbus-1-3
+  libegl1
+  libfontconfig1
+  libfreetype6
+  libgl1-mesa-dev
+  libglib2.0-0
+  libice6
+  libnss3
+  libopengl0
+  libsm6
+  libwayland-client0
+  libwayland-cursor0
+  libwayland-egl1
+  libx11-6
+  libx11-xcb1
+  libxcb-cursor0
+  libxcb-icccm4
+  libxcb-image0
+  libxcb-keysyms1
+  libxcb-randr0
+  libxcb-render-util0
+  libxcb-render0
+  libxcb-shape0
+  libxcb-shm0
+  libxcb-sync1
+  libxcb-util1
+  libxcb-xfixes0
+  libxcb-xkb1
+  libxcb1
+  libxext6
+  libxi6
+  libxkbcommon-x11-0
+  libxkbcommon0
+  libxrender1
+  ninja-build
+  pkg-config
+  python3
+  wl-clipboard
+)
+
+missing_packages=()
+for package in "${packages[@]}"; do
+  if ! dpkg-query -W -f='${Status}' "$package" 2>/dev/null |
+    grep -Fq 'install ok installed'; then
+    missing_packages+=("$package")
+  fi
+done
+
+run_apt() {
+  if ((EUID == 0)); then
+    DEBIAN_FRONTEND=noninteractive apt-get "$@"
+  else
+    sudo DEBIAN_FRONTEND=noninteractive apt-get "$@"
+  fi
+}
+
+if ((${#missing_packages[@]})); then
+  echo ":: Installing ${#missing_packages[@]} missing system packages"
+  run_apt update
+  run_apt install -y --no-install-recommends "${missing_packages[@]}"
+else
+  echo ":: System packages already installed"
+fi
+echo ":: System packages ready in $((SECONDS - step_started))s"
+
+qt_version=6.9.3
+qt_root="$HOME/.local/share/omapaint/Qt"
+qt_dir="$qt_root/$qt_version/gcc_64"
+qt_current="$qt_root/current"
+
+step_started=$SECONDS
+if [[ ! -f "$qt_dir/lib/cmake/Qt6/Qt6Config.cmake" ||
+      ! -f "$qt_dir/lib/cmake/Qt6Qml/Qt6QmlConfig.cmake" ||
+      ! -f "$qt_dir/plugins/imageformats/libqwebp.so" ]]; then
+  echo ":: Installing Qt $qt_version"
+  aqt_version=3.3.0
+  aqt_root="$HOME/.local/share/omapaint/aqtinstall-$aqt_version"
+  aqt_python="$aqt_root/bin/python"
+
+  if [[ ! -x "$aqt_python" ]] ||
+    ! "$aqt_python" -c \
+      "import importlib.metadata; assert importlib.metadata.version('aqtinstall') == '$aqt_version'" \
+      2>/dev/null; then
+    python3 -m venv "$aqt_root"
+    "$aqt_root/bin/pip" install --disable-pip-version-check \
+      "aqtinstall==$aqt_version"
+  fi
+
+  rm -rf "$qt_root/$qt_version"
+  mkdir -p "$qt_root"
+  temporary_dir=$(mktemp -d)
+  trap 'rm -rf "$temporary_dir"' EXIT
+  (
+    cd "$temporary_dir"
+    "$aqt_python" -m aqt install-qt --outputdir "$qt_root" \
+      linux desktop "$qt_version" linux_gcc_64 --modules qtimageformats
+  )
+  rm -rf "$temporary_dir"
+  trap - EXIT
+else
+  echo ":: Qt $qt_version already installed"
+fi
+ln -sfn "$qt_dir" "$qt_current"
+echo ":: Qt ready in $((SECONDS - step_started))s"
+
+repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+profile_marker="# OmaPaint orb Qt environment"
+if ! grep -Fqx "$profile_marker" "$HOME/.bash_profile" 2>/dev/null; then
+  cat >>"$HOME/.bash_profile" <<EOF
+
+$profile_marker
+if [[ "\${PWD}" == "$repo_root" || "\${PWD}" == "$repo_root/"* ]]; then
+  export QTDIR="$qt_current"
+  export PATH="\${QTDIR}/bin:\${PATH}"
+  export CMAKE_PREFIX_PATH="\${QTDIR}\${CMAKE_PREFIX_PATH:+:\${CMAKE_PREFIX_PATH}}"
+  export LD_LIBRARY_PATH="\${QTDIR}/lib\${LD_LIBRARY_PATH:+:\${LD_LIBRARY_PATH}}"
+  export QT_PLUGIN_PATH="\${QTDIR}/plugins"
+  export QML_IMPORT_PATH="\${QTDIR}/qml"
+fi
+EOF
+  echo ":: Added the repository-scoped Qt environment to ~/.bash_profile"
+else
+  echo ":: Repository-scoped Qt environment already configured"
+fi
+
+echo ":: OmaPaint orb setup complete in ${SECONDS}s"
