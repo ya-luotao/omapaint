@@ -48,8 +48,10 @@ private:
     void setBrushSize(int size);
     void setTheme(const QString &name);
     void buildScript();
+    // `cell` selects which glyph paints (default full block); art files may
+    // carry a second color layer under a different glyph (e.g. 'R').
     void buildBlockArt(const QString &path, qreal offX, qreal offY, qreal cellW,
-                       qreal cellH, int msPerBlock);
+                       qreal cellH, int msPerBlock, QChar cell = QChar(0x2588));
 
     // --- execution helpers ---
     QPointF scenePos(const QPointF &imagePos) const;

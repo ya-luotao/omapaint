@@ -17,6 +17,10 @@ constexpr qreal kIconOffX = (1280 - 54 * kIconCellW) / 2.0;
 constexpr qreal kIconOffY = 20;
 constexpr qreal kWordOffY = kIconOffY + 26 * kIconCellH + 40;
 constexpr qreal kWordOffX = (1280 - 81 * kWordCellW) / 2.0;
+// Ruby (assets/ruby.txt, 38x32 cells) sits in the empty top-right corner.
+constexpr qreal kRubyCell = 7;
+constexpr qreal kRubyOffX = 1250 - 38 * kRubyCell;
+constexpr qreal kRubyOffY = 56;
 
 QStringList readLines(const QString &path)
 {
@@ -194,9 +198,10 @@ void DemoDriver::setTheme(const QString &name)
 
 // Speed-paints one block-art file with solid rectangles.
 void DemoDriver::buildBlockArt(const QString &path, qreal offX, qreal offY,
-                               qreal cellW, qreal cellH, int msPerBlock)
+                               qreal cellW, qreal cellH, int msPerBlock,
+                               QChar cell)
 {
-    const QChar full(0x2588), lower(0x2584), upper(0x2580);
+    const QChar full(cell), lower(0x2584), upper(0x2580);
     const QStringList rows = readLines(path);
 
     for (int y = 0; y < rows.size(); ++y) {
@@ -283,14 +288,28 @@ void DemoDriver::buildScript()
     dragTo(QPointF(210, 300), QPointF(400, 200), 380);
     wait(400);
 
-    // 5. Pixelate a slice of the icon, then undo it.
+    // 5. Speed-paint Ruby — the cat the red dot is named after — as block
+    // art in the empty top-right corner: same visual language as the mark,
+    // theme foreground as fur, theme red as her harness and her period.
+    setTool(CanvasItem::Rectangle);
+    setFillMode(CanvasItem::Solid);
+    setColor(kInk);
+    buildBlockArt(QStringLiteral(":/ruby.txt"), kRubyOffX, kRubyOffY,
+                  kRubyCell, kRubyCell, 55);
+    wait(200);
+    setColor(kAccent);
+    buildBlockArt(QStringLiteral(":/ruby.txt"), kRubyOffX, kRubyOffY,
+                  kRubyCell, kRubyCell, 70, QLatin1Char('R'));
+    wait(400);
+
+    // 6. Pixelate a slice of the icon, then undo it.
     setTool(CanvasItem::Pixelate);
     dragTo(QPointF(560, 90), QPointF(880, 260), 500);
     wait(650);
     at([this] { m_canvas->undo(); });
     wait(350);
 
-    // 6. Select the red dot, float-move it, drop it, undo.
+    // 7. Select the red dot, float-move it, drop it, undo.
     setTool(CanvasItem::Selection);
     dragTo(QPointF(1044, 630), QPointF(1108, 692), 300);
     wait(220);
@@ -301,7 +320,7 @@ void DemoDriver::buildScript()
     at([this] { m_canvas->undo(); });
     wait(400);
 
-    // 7. Zoom into the mark's corner: crisp pixels + grid.
+    // 8. Zoom into the mark's corner: crisp pixels + grid.
     setTool(CanvasItem::Pencil);
     for (int i = 0; i < 3; ++i) {
         at([this] { m_canvas->zoomIn(); });
@@ -311,14 +330,14 @@ void DemoDriver::buildScript()
     at([this] { m_canvas->resetZoom(); });
     wait(500);
 
-    // 8. Live Omarchy theme switch, and back.
+    // 9. Live Omarchy theme switch, and back.
     setTheme(QStringLiteral("flexoki-light"));
     wait(1800);
     if (!m_originalTheme.isEmpty())
         setTheme(m_originalTheme);
     wait(1500);
 
-    // 9. Undo cascade and back — the whole painting rewinds and replays.
+    // 10. Undo cascade and back — the painting rewinds and replays.
     for (int i = 0; i < 6; ++i) {
         at([this] { m_canvas->undo(); });
         wait(100);

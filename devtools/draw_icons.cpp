@@ -182,6 +182,8 @@ QImage drawLogo()
     }
     brush.end(image, center + QPointF(radius, 0), beige);
 
+    // The paint dot is named Ruby, after a chubby white cat with a
+    // ruby-red harness. She also stars in the demo (src/demo_driver.cpp).
     EllipseTool dot;
     ToolContext red;
     red.color = QColor("#c34043");

@@ -37,6 +37,7 @@ qt_add_resources(omapaint "assets"
     BASE assets
     FILES
         assets/omapaint.png
+        assets/ruby.txt
         assets/icons/select.png
         assets/icons/pencil.png
         assets/icons/brush.png
